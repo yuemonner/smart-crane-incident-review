@@ -6,7 +6,7 @@
   <link rel="stylesheet" href="/static/cloud.css">
 </head>
 <body data-lens="director">
-  <aside><div class="brand"><span>AC</span> SMART CRANE</div><p class="eyebrow">DECISION REVIEW</p>
+  <aside><div class="brand"><span>SC</span> SMART CRANE</div><p class="eyebrow">DECISION REVIEW</p>
     <div class="role-switch"><span>DECISION LENS</span><button data-role="director" class="active">Director</button><button data-role="team">Team Review</button></div>
     <nav><small>DIRECTOR</small><button data-view="overview" data-level="director" class="active">▦ <b>Decision overview</b></button><button data-view="live-reconstruction" data-level="director">◉ Live reconstruction</button><small>TEAM REVIEW</small><button data-view="incident" data-level="team">◎ What happened?</button><button data-view="changed" data-level="team">↗ What changed?</button><button data-view="where" data-level="team">⌁ Device or deployment?</button><button data-view="evidence-gaps" data-level="team">◇ What would we need next time?</button></nav>
     <div class="safety"><i></i><div><strong>Read-only mode</strong><small>No device control or source writes</small></div></div>
@@ -35,7 +35,7 @@
     <section id="live-reconstruction" class="view">
       <div class="live-hero panel">
         <div><p class="eyebrow">LIVE RECONSTRUCTION DEMO</p><h2>Event → reconstruction → reasoning → decision</h2><p class="lede">Representative Smart Crane evidence streams in over time. Veyra reconstructs what changed, separates evidence types, compares peer assets, and preserves the human decision context.</p></div>
-        <div class="live-controls"><button id="livePlay">Pause</button><button id="liveRestart">Restart</button><b id="liveStep">Step 0 / 10</b></div>
+        <div class="live-controls"><button id="livePlay">Pause</button><button id="liveInject">Inject new evidence</button><button id="liveRestart">Restart</button><b id="liveStep">Step 0 / 11</b></div>
       </div>
       <section class="machine-change panel"><div><span>MACHINE CHANGE DETECTED</span><b id="liveChange">Waiting for evidence…</b></div><div><span>NEW REVIEW</span><b id="liveReviewStatus">Not created</b></div><div><span>KNOWLEDGE TIME</span><b id="liveKnowledgeTime">—</b></div></section>
       <div id="liveNotice" class="late-notice" hidden></div>
@@ -52,6 +52,7 @@
         <article class="panel"><span class="eyebrow">WHAT CAN'T WE RECONSTRUCT?</span><div id="liveGaps" class="gap-check"></div></article>
         <article class="panel team-decision"><span class="eyebrow">TEAM DECISION</span><div id="liveDecision"></div></article>
       </div>
+      <article class="panel learning-panel"><span class="eyebrow">WHAT DID WE LEARN?</span><div id="liveLearning"></div></article>
       <article class="panel data-boundary"><span class="eyebrow">DATA BOUNDARY</span><p id="liveBoundary"></p></article>
     </section>
     <section id="where" class="view">

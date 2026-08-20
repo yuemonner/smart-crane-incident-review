@@ -75,9 +75,11 @@ machine change
 → reconstructability gap check
 → frozen human decision
 → late evidence updates the current conclusion without rewriting the historical decision context
+→ peer failure changes the current fleet view while the 16:05 decision remains frozen
+→ historical outcome comparison shows what similar reviewed contexts produced
 ```
 
-The AI reasoning layer is deliberately constrained: backend reconstruction determines what happened, rules classify evidence status, AI explains already reconstructed evidence, and humans record the decision.
+The AI reasoning layer is deliberately constrained: backend reconstruction determines what happened, rules classify evidence status, AI explains already reconstructed evidence, and humans record the decision. The final learning view is historical outcomes, not a recommendation.
 
 The eval suite checks that the engine:
 

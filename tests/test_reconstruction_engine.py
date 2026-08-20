@@ -102,3 +102,20 @@ def test_live_demo_where_else_includes_counterexamples():
     assert report["where_else"]["exposed_count"] == 27
     assert report["where_else"]["precursor_count"] == 11
     assert report["where_else"]["counterexample_count"] == 16
+
+
+def test_live_demo_peer_failure_updates_current_view_without_rewriting_decision():
+    report = live_reconstruction_report(10)
+    assert report["active_event"]["title"] == "Crane-08 reports the same failure"
+    assert report["where_else"]["matching_failure_count"] == 1
+    assert report["team_decision"]["recorded"]["decision"] == "Hold deployment"
+    assert "before the Crane-08 failure" in report["new_evidence_notice"]["historical_context"]
+
+
+def test_live_demo_generates_historical_learning_after_outcome():
+    report = live_reconstruction_report(11)
+    learning = report["historical_learning"]
+    assert learning["created"] is True
+    assert learning["similar_contexts"] == 18
+    assert learning["outcomes"][0]["previous_action"] == "Continue investigation"
+    assert "not a recommendation" in learning["note"].lower()

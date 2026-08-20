@@ -369,16 +369,31 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
     changes = engine.detect_changes("crane-07", incident_time)
     reconstructability = engine.analyze_reconstructability("crane-07", incident_time, knowledge_time)
     peers = engine.match_peers("crane-07", incident_time)
+    where_else = peers.model_dump(mode="json")
+    if step >= 10:
+        where_else["matching_failure_count"] = 1
+        where_else["matches"] = [
+            {**match, "matching_failure": True}
+            if match["asset_id"] == "crane-08" else match
+            for match in where_else["matches"]
+        ]
     evidence_state = _classified_evidence(visible, incident_time, knowledge_time)
-    interpretation = _bounded_interpretation(evidence_state, peers)
+    interpretation = _bounded_interpretation(evidence_state, where_else)
     frozen_decision = _frozen_decision(visible, incident_time, knowledge_time) if step >= 8 else None
     new_evidence_notice = None
-    if step >= 9:
+    if step == 9:
         new_evidence_notice = {
             "title": "New evidence changed the current conclusion",
             "message": "Late telemetry shows network state was normal before the E-stop. The current interpretation changes, but the 16:05 decision context remains frozen.",
             "current_conclusion": "Shared deployment issue is less supported than it appeared at the decision time.",
             "historical_context": "Decision at 16:05 was made before CR07-COUNTER-NETWORK was available.",
+        }
+    if step >= 10:
+        new_evidence_notice = {
+            "title": "New peer failure changed the current conclusion",
+            "message": "Crane-08 now reports the same failure under the same firmware/config exposure. Fleet-level concern is stronger, but the 16:05 decision context remains frozen.",
+            "current_conclusion": "Shared deployment issue is now more supported and requires peer inspection.",
+            "historical_context": "Decision at 16:05 was made before the Crane-08 failure was available.",
         }
     return {
         "step": step,
@@ -406,13 +421,14 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
         "current_state": current_state.model_dump(mode="json"),
         "evidence_state": evidence_state,
         "ai_reasoning_layer": interpretation,
-        "where_else": peers.model_dump(mode="json"),
+        "where_else": where_else,
         "reconstructability": reconstructability.model_dump(mode="json"),
         "team_decision": {
             "options": ["Continue investigation", "Hold deployment", "Roll back", "Inspect peer assets", "Return to service"],
             "recorded": frozen_decision,
         },
         "new_evidence_notice": new_evidence_notice,
+        "historical_learning": _historical_learning(step),
     }
 
 
@@ -429,7 +445,8 @@ def _live_review_stream() -> list[dict[str, Any]]:
         (0.55, "fleet_compare", "Peer comparison completed", "Veyra reconstruction engine", "27 peers share firmware/config exposure; 11 show the precursor signal."),
         (0.55, "decision", "Team decision recorded: hold deployment", "Review workspace", "Decision context is frozen with evidence available at 16:05."),
         (2.5, "late_counterevidence", "Network telemetry arrived late: normal state before E-stop", "IoT Hub delayed retrieval", "Current conclusion updates without rewriting the 16:05 decision."),
-        (4.0, "outcome", "Limited follow-up test completed without recurrence", "Service review", "Outcome attaches to the original episode."),
+        (3.2, "peer_failure", "Crane-08 reports the same failure", "IoT Hub + service review", "Matching peer failures update from 0 to 1 after the earlier decision."),
+        (4.0, "outcome", "Historical outcome comparison generated", "Veyra operational memory", "Similar reviewed contexts become reusable learning for the next decision."),
     ]
     return [
         {
@@ -482,16 +499,25 @@ def _classified_evidence(records: list[CanonicalEvidence], incident_time: dateti
     }
 
 
-def _bounded_interpretation(evidence_state: dict[str, list[str]], peers: PeerContextResult) -> dict[str, Any]:
+def _bounded_interpretation(evidence_state: dict[str, list[str]], peers: PeerContextResult | dict[str, Any]) -> dict[str, Any]:
+    exposed_count = peers.exposed_count if isinstance(peers, PeerContextResult) else peers["exposed_count"]
+    precursor_count = peers.precursor_count if isinstance(peers, PeerContextResult) else peers["precursor_count"]
+    counterexample_count = peers.counterexample_count if isinstance(peers, PeerContextResult) else peers["counterexample_count"]
+    matching_failure_count = peers.matching_failure_count if isinstance(peers, PeerContextResult) else peers["matching_failure_count"]
     has_late_counter = bool(evidence_state["counterevidence"])
-    plausible = "less supported" if has_late_counter else "plausible but not established"
+    if matching_failure_count:
+        plausible = "more supported and requires peer inspection"
+    elif has_late_counter:
+        plausible = "less supported"
+    else:
+        plausible = "plausible but not established"
     return {
         "current_interpretation": [
             "The incident followed a software/configuration change.",
-            f"{peers.exposed_count} peer assets share the same firmware/config exposure.",
-            f"{peers.precursor_count} exposed peers show the same precursor signal.",
-            f"{peers.counterexample_count} exposed peers do not show the precursor signal.",
-            "No matching peer failure has been recorded.",
+            f"{exposed_count} peer assets share the same firmware/config exposure.",
+            f"{precursor_count} exposed peers show the same precursor signal.",
+            f"{counterexample_count} exposed peers do not show the precursor signal.",
+            f"{matching_failure_count} matching peer failure has been recorded.",
             f"A shared deployment issue is {plausible}.",
         ],
         "why": [
@@ -541,4 +567,26 @@ def _frozen_decision(records: list[CanonicalEvidence], incident_time: datetime, 
         ],
         "reason_entered_by_team": "Hold deployment until peer exposure and missing controller-state evidence are reviewed.",
         "historical_context_rule": "Later evidence can change the current conclusion, but it does not rewrite what was knowable at decision time.",
+    }
+
+
+def _historical_learning(step: int) -> dict[str, Any]:
+    if step < 11:
+        return {
+            "created": False,
+            "headline": "Historical learning not generated yet",
+            "note": "Outcome-linked history appears after new evidence and follow-up outcomes attach to the episode.",
+            "similar_contexts": 0,
+            "outcomes": [],
+        }
+    return {
+        "created": True,
+        "headline": "Every decision makes the next review less cold-start",
+        "similar_contexts": 18,
+        "note": "Historical outcomes, not a recommendation. Veyra shows what happened in similar reviewed contexts.",
+        "outcomes": [
+            {"previous_action": "Continue investigation", "cases": 8, "outcome": "6 isolated config issue"},
+            {"previous_action": "Rollback", "cases": 5, "outcome": "2 resolved"},
+            {"previous_action": "Field inspection", "cases": 5, "outcome": "4 hardware-related"},
+        ],
     }
