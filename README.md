@@ -1,17 +1,24 @@
-# ACECO Smart Crane Incident Review
+# Smart Crane Decision Review Pilot
 
-This is a read-only internal investigation tool for ACECO/Norlink Smart Crane incidents. It turns one incident into a fleet-wide **WHERE ELSE?** assessment while clearly separating confirmed evidence, unestablished claims, and evidence gaps.
+This is a read-only design-partner pilot prototype for Smart Crane / connected industrial equipment decision reviews. It turns one high-cost machine decision into a fleet-wide **WHERE ELSE?** assessment while clearly separating confirmed evidence, unestablished claims, counterevidence, and evidence gaps.
 
-The validated operating model is:
+The proposed 4-week pilot operating model is:
 
-1. Reconstruct the machine episode and its physical state.
+1. Reconstruct what happened and the machine state around the event.
 2. Establish the last known good software/configuration/runtime/test state when explicit evidence exists.
 3. Identify what changed.
 4. Compare device-specific evidence with peer devices and deployment cohorts.
 5. Support a human test / rollback / redeploy / hold decision.
-6. Preserve the decision and observed outcome for the next investigation.
+6. Preserve what the team knew at the time, what it decided, and what happened next.
+7. Identify what must be captured next time so the next review is reconstructable.
 
-The application does not assume machines fail frequently. It addresses the high cost of reconstructing context when an unusual event or risky production change does require investigation.
+The application does not assume machines fail frequently. It addresses the high cost of reconstructing context when an unusual event, risky production change, return-to-service decision, rollback, redeploy, inspection, configuration change, or maintenance intervention does require review.
+
+## Pilot question
+
+Can a read-only system of context reduce the time required to reconstruct machine decision context, identify peer exposure, preserve the knowledge state at the time of decision, and specify what must be captured next time?
+
+The pilot is not trying to replace telemetry, Azure DevOps, maintenance systems, or operator workflow. It is testing whether evidence across those systems can be reconstructed into a decision review that is useful to engineering, service, and operations together.
 
 ## Architecture boundary
 
@@ -19,7 +26,7 @@ This application is a **system of context**, not a replacement system of record:
 
 - Continuous high-volume telemetry remains in the telemetry platform.
 - A bounded operational trace holds only the recent context that may be difficult to reconstruct later.
-- A critical trigger freezes an episode snapshot containing version/configuration, operating mode, critical state, state diff, recent actions, related IDs, and intervention context.
+- A critical trigger freezes a review snapshot containing version/configuration, operating mode, critical state, state diff, recent actions, related IDs, and intervention context.
 - Manual interventions and configuration changes can be appended as explicit audit events.
 - A local evidence ledger preserves normalized non-demo evidence in an append-only table with a verifiable hash chain.
 - Source systems continue to own deployment, telemetry, ticket, and maintenance truth.
@@ -90,7 +97,7 @@ Human-recorded owner, checkpoint, and explicit decision fields are stored in `wo
 - `POST /api/sources/postgres/refresh` ingests bounded live ACECO fault and notification evidence using an enforced read-only session.
 - `POST /api/sources/cosmos/refresh` ingests bounded live physical telemetry for one crane and time window.
 - `POST /api/capture/trace` adds a lightweight sample to the bounded operational ring buffer.
-- `POST /api/capture/critical-snapshot` freezes a critical machine episode and appends it to the evidence ledger.
+- `POST /api/capture/critical-snapshot` freezes a critical machine-decision snapshot and appends it to the evidence ledger.
 - `POST /api/capture/audit-event` appends an explicit manual intervention/configuration audit event.
 - `GET /api/capture/status` reports buffer ownership, capacity, and ledger verification status.
 - `GET /api/ledger/status` verifies the local evidence hash chain and states its integrity limitations.

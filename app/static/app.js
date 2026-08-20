@@ -3,6 +3,7 @@ const esc=s=>String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&
 let currentIncident=null;
 let loadGeneration=0;
 const physical=e=>e.type==='alarm'||e.type==='device_event'||e.attributes?.physical_signal;
+const setList=(id,items)=>{const el=$(id);if(el)el.innerHTML=(items||[]).map(x=>`<li>${esc(x)}</li>`).join('')||'<li>Not recorded in this evidence set.</li>'};
 const eventCard=e=>`<div class="event ${physical(e)?'physical':'supporting'} ${esc(e.assertion_kind||'observed')}"><time>${new Date(e.occurred_at).toLocaleString()} · ${esc(e.type).toUpperCase()}</time><b>${esc(e.title)}</b><a href="${esc(e.source_url||'#')}" target="_blank">${esc(e.source)} · ${esc(e.id)} ↗</a><small class="evidence-meta">${esc(e.assertion_kind||'observed').toUpperCase()} · ${esc(e.capture_class||'source_reference').replaceAll('_',' ').toUpperCase()}${e.confidence!=null?` · confidence ${Math.round(e.confidence*100)}%`:''} · ${esc(e.evidence_mode).toUpperCase()} · retrieved ${e.retrieved_at?new Date(e.retrieved_at).toLocaleString():'not recorded'} · ${esc(e.integrity?.transport||'transport not recorded')}</small></div>`;
 
 async function loadIncidents(){
@@ -30,14 +31,15 @@ async function loadSelectedIncident(ticket=++loadGeneration){
 function clearWorkspace(mode){
   currentIncident=null;['exposed','precursors','customers','ovExposed','ovSignals','reviewCount','gapCount'].forEach(id=>$(id).textContent='—');
   $('timeline').innerHTML=`<div class="panel">No ${esc(mode)} incident evidence is currently loaded. Connect or refresh the relevant read-only source; synthetic evidence will not be substituted.</div>`;
-  $('matches').innerHTML='';$('customerExposure').innerHTML='<p>No evidence loaded in this mode.</p>';$('attentionState').textContent='NO EVIDENCE';$('escalationTitle').textContent='Director-attention rules were not evaluated';$('escalationReasons').innerHTML='<li>No incident evidence is loaded in this workspace.</li>';$('overviewQuestions').innerHTML='';$('confirmed').innerHTML='';$('unknown').innerHTML='';$('gaps').innerHTML='';$('changes').innerHTML='';$('provenanceLimits').innerHTML='<li>No evidence loaded.</li>';$('freshnessState').textContent='NO EVIDENCE';$('freshnessDetail').textContent='Nothing from another mode is being mixed in.';
+  $('matches').innerHTML='';$('customerExposure').innerHTML='<p>No evidence loaded in this mode.</p>';$('attentionState').textContent='NO EVIDENCE';$('escalationTitle').textContent='Director-attention rules were not evaluated';$('escalationReasons').innerHTML='<li>No incident evidence is loaded in this workspace.</li>';$('confirmed').innerHTML='';$('unknown').innerHTML='';$('gaps').innerHTML='';$('changes').innerHTML='';$('provenanceLimits').innerHTML='<li>No evidence loaded.</li>';$('freshnessState').textContent='NO EVIDENCE';$('freshnessDetail').textContent='Nothing from another mode is being mixed in.';
+  ['ksObserved','ksSuspected','ksUnknown','ksCounter','alreadyReconstructable','notReconstructable','captureNextTime'].forEach(id=>setList(id,[]));
   $('lkgState').textContent='NOT ESTABLISHED';$('lkgObserved').textContent=$('lkgSoftware').textContent=$('lkgConfig').textContent=$('lkgRuntime').textContent=$('lkgTests').textContent=$('lkgValidator').textContent='Not recorded';$('scopeState').textContent='NOT ESTABLISHED';$('scopeExplanation').textContent='No episode evidence is loaded.';$('scopeDevice').textContent=$('scopeSignals').textContent=$('scopeIncidents').textContent='—';
 }
 function render(i,w){
   $('exposed').textContent=w.exposed_count;$('precursors').textContent=w.precursor_count;$('customers').textContent=w.customer_count;
   $('ovExposed').textContent=w.exposed_count;$('ovSignals').textContent=w.precursor_count;$('reviewCount').textContent=w.precursor_count;$('gapCount').textContent=w.status.evidence_gaps.length;
   const customerCounts=w.matches.reduce((a,m)=>(a[m.customer]=(a[m.customer]||0)+1,a),{});$('customerExposure').innerHTML=Object.keys(customerCounts).length?Object.entries(customerCounts).map(([n,c])=>`<p><b>${c}</b> ${esc(n)}</p>`).join(''):'<p>No cross-fleet customer exposure established from this evidence set.</p>';
-  $('overviewQuestions').innerHTML=w.status.not_established.map(x=>`<li>${esc(x)}</li>`).join('');$('gapsUnknown').innerHTML=w.status.not_established.map(x=>`<li>${esc(x)}</li>`).join('');$('gapsMissing').innerHTML=w.status.evidence_gaps.map(x=>`<li>${esc(x)}</li>`).join('');
+  renderKnowledgeState(i,w);renderReconstructability(i,w);
   const c=i.coordination||{};$('incidentOwner').textContent=c.owner||'Not recorded';$('adoState').textContent=c.state||'No linked ADO work item';$('investigationTask').textContent=c.work_item_id?`ADO ${c.work_item_id}`:'Not recorded';$('checkpointDue').textContent=c.checkpoint_at?new Date(c.checkpoint_at).toLocaleString():'Not recorded';
   const l=i.last_known_good||{};$('lkgState').textContent=l.established?'ESTABLISHED FROM EVIDENCE':'NOT ESTABLISHED';$('lkgState').className=`state-pill ${l.established?'established':''}`;$('lkgObserved').textContent=l.observed_at?new Date(l.observed_at).toLocaleString():'Not recorded';$('lkgSoftware').textContent=l.software_revision||'Not recorded';$('lkgConfig').textContent=l.config_profile||'Not recorded';$('lkgRuntime').textContent=l.runtime_state||'Not recorded';$('lkgTests').textContent=l.test_evidence?.join(' · ')||'Not recorded';$('lkgValidator').textContent=l.validated_by||'Not recorded';$('lkgLimitation').textContent=l.limitation||'';
   const s=i.scope_assessment||{};$('scopeState').textContent=(s.classification||'not_established').replaceAll('_',' ').toUpperCase();$('scopeState').className=`state-pill ${s.classification!=='not_established'?'observed':''}`;$('scopeExplanation').textContent=s.explanation||'Not established';$('scopeDevice').textContent=s.device_evidence_count??'—';$('scopeSignals').textContent=s.peer_signal_count??'—';$('scopeIncidents').textContent=s.peer_incident_count??'—';
@@ -49,9 +51,54 @@ function render(i,w){
   const limits=[...new Set(i.timeline.map(e=>e.integrity?.limitation).filter(Boolean))];$('provenanceLimits').innerHTML=limits.map(x=>`<li>${esc(x)}</li>`).join('')||'<li>No integrity statement was recorded for this evidence.</li>';
   const newest=i.freshest_source_at,oldest=i.stalest_source_at;$('freshnessState').textContent=i.evidence_mode.toUpperCase();$('freshnessDetail').textContent=newest?`Retrieved ${new Date(newest).toLocaleString()}${oldest&&oldest!==newest?` · oldest retrieval ${new Date(oldest).toLocaleString()}`:''}`:'Retrieval timestamp not recorded.';
 }
+function renderKnowledgeState(i,w){
+  const deployment=i.timeline.find(e=>e.type==='deployment'), alarm=i.timeline.find(e=>e.type==='alarm');
+  setList('ksObserved',[
+    alarm?`${alarm.title} occurred during operation`:'Alarm evidence is not present',
+    deployment?`${deployment.attributes?.firmware||'software'} active in the review window`:'Active software revision is not established',
+    i.status.confirmed.find(x=>x.includes('notification'))||'Notification acknowledgement status requires review',
+  ]);
+  setList('ksSuspected',[
+    'retry-handling or notification change may be related',
+    'configuration C17 may be part of the exposure surface',
+  ]);
+  setList('ksUnknown',[
+    ...i.status.not_established,
+    'whether the same machine state existed on every peer asset',
+  ]);
+  const noSignal=Math.max(0,w.exposed_count-w.precursor_count);
+  setList('ksCounter',[
+    `${noSignal} exposed assets show no matching signal`,
+    `${w.matches.filter(m=>!m.precursor_detected).length} reviewed peer records do not establish a matching incident`,
+    'sequence does not establish causality',
+  ]);
+}
+function renderReconstructability(i,w){
+  const l=i.last_known_good||{};
+  setList('alreadyReconstructable',[
+    l.software_revision?`software revision ${l.software_revision}`:'software revision when deployment evidence exists',
+    l.config_profile?`configuration ${l.config_profile}`:'configuration when source record exists',
+    i.timeline.some(e=>e.type==='alarm')?'alarm event and timestamp':'alarm event when source record exists',
+    l.test_evidence?.length?l.test_evidence.join(' · '):'test result when validation marker exists',
+  ]);
+  setList('notReconstructable',[
+    'operator override reason',
+    'machine state immediately before E-stop',
+    'exact config diff across every affected module',
+    'intervention start/end boundaries',
+    'local state during connectivity loss',
+  ]);
+  setList('captureNextTime',[
+    'lightweight runtime trace around critical triggers',
+    'critical-event snapshot of software/config/runtime state',
+    'append-only intervention record with reason and time window',
+    'explicit last-known-good marker after validation',
+    'source-linked decision record with outcome follow-up',
+  ]);
+}
 function renderDiff(i){const c=i.what_changed,d=c.find(e=>e.type==='deployment'),cfg=c.find(e=>e.type==='config_change'),commit=c.find(e=>e.type==='commit'),build=c.find(e=>e.type==='build'),tests=c.filter(e=>e.type==='test'),signals=i.timeline.filter(physical);const elapsed=e=>d&&e?`${((new Date(e.occurred_at)-new Date(d.occurred_at))/36e5).toFixed(1)}h after deployment`:'Not established';const rows=[['Software version',d?.attributes?.previous_firmware||'Not in evidence',d?.attributes?.firmware||'Not in evidence'],['Configuration',cfg?.attributes?.previous||'Not in evidence',cfg?.attributes?.config_profile||'Not in evidence'],['Notification handling',commit?.attributes?.commit||commit?.id||'Not in evidence',commit?.title||'No linked change'],['Validation',build?.title||'Build evidence unavailable',tests.length?tests.map(x=>x.title).join(' · '):'Test evidence unavailable'],['First physical signal','—',elapsed(signals[0])],['Incident','—',elapsed(signals.find(e=>e.type==='alarm'))],['Causal link','—','Not established']];$('changes').innerHTML=rows.map(([l,b,a])=>`<article class="diffrow"><span>${esc(l)}</span><div><small>BEFORE / EVIDENCE</small><b>${esc(b)}</b></div><i>→</i><div><small>AFTER / OBSERVATION</small><b>${esc(a)}</b></div></article>`).join('')}
 async function loadMemory(){if(!currentIncident)return;const r=await fetch(`/api/memory/incidents/${encodeURIComponent(currentIncident.id)}`);if(!r.ok){$('recordedDecision').textContent='No decision requiring director attention is currently recorded.';$('memoryOutcome').value='';return}const m=await r.json();$('memoryOwner').value=m.owner||'';$('memoryCheckpoint').value=m.checkpoint_at?m.checkpoint_at.slice(0,16):'';$('memoryDecision').value=m.decision||'';$('memoryOutcome').value=m.outcome||'';$('incidentOwner').textContent=m.owner||$('incidentOwner').textContent;$('checkpointDue').textContent=m.checkpoint_at?new Date(m.checkpoint_at).toLocaleString():$('checkpointDue').textContent;$('recordedDecision').textContent=m.decision?(m.outcome?`${m.decision} · outcome: ${m.outcome}`:m.decision):'No decision requiring director attention is currently recorded.'}
 $('saveMemory').onclick=async()=>{if(!currentIncident)return;const q=currentIncident.request,i=currentIncident.investigation,now=new Date().toISOString(),decision=$('memoryDecision').value||null,p={id:currentIncident.id,entity_id:q.entity_id,title:currentIncident.title,incident_time:q.incident_time,owner:$('memoryOwner').value||null,checkpoint_at:$('memoryCheckpoint').value?new Date($('memoryCheckpoint').value).toISOString():null,decision,decision_at:decision?now:null,outcome:$('memoryOutcome').value||null,outcome_recorded_at:$('memoryOutcome').value?now:null,knowledge_at_decision:decision?{captured_at:now,observed:i.status.confirmed,evidence_supported:[i.scope_assessment?.explanation].filter(Boolean),assumptions:[],unknowns:[...i.status.not_established,...i.status.evidence_gaps],evidence_ids:i.timeline.map(e=>e.id)}:null};const r=await fetch(`/api/memory/incidents/${encodeURIComponent(p.id)}`,{method:'PUT',headers:{'Content-Type':'application/json'},body:JSON.stringify(p)});$('memoryMessage').textContent=r.ok?'Decision, evidence available at the time, and outcome preserved locally. No source system was changed.':'Could not save the local record.';if(r.ok)await loadMemory()};
 $('evidenceMode').onchange=loadIncidents;$('incidentSelect').onchange=loadSelectedIncident;loadIncidents().catch(e=>clearWorkspace($('evidenceMode').value));
 document.querySelectorAll('nav button').forEach(b=>b.onclick=()=>{document.querySelectorAll('nav button,.view').forEach(x=>x.classList.remove('active'));b.classList.add('active');$(b.dataset.view).classList.add('active')});
-document.querySelectorAll('.role-switch button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.role-switch button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const d=b.dataset.role==='director';$('lensDescription').textContent=d?'director operating picture':'engineering evidence workspace';document.querySelector(`nav button[data-view="${d?'overview':'where'}"]`).click();document.body.dataset.lens=b.dataset.role});
+document.querySelectorAll('.role-switch button').forEach(b=>b.onclick=()=>{document.querySelectorAll('.role-switch button').forEach(x=>x.classList.remove('active'));b.classList.add('active');const d=b.dataset.role==='director';$('lensDescription').textContent=d?'director operating picture':'team review workspace';document.querySelector(`nav button[data-view="${d?'overview':'where'}"]`).click();document.body.dataset.lens=b.dataset.role});
