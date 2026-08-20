@@ -5,6 +5,24 @@ let loadGeneration=0;
 const physical=e=>e.type==='alarm'||e.type==='device_event'||e.attributes?.physical_signal;
 const setList=(id,items)=>{const el=$(id);if(el)el.innerHTML=(items||[]).map(x=>`<li>${esc(x)}</li>`).join('')||'<li>Not recorded in this evidence set.</li>'};
 const eventCard=e=>`<div class="event ${physical(e)?'physical':'supporting'} ${esc(e.assertion_kind||'observed')}"><time>${new Date(e.occurred_at).toLocaleString()} · ${esc(e.type).toUpperCase()}</time><b>${esc(e.title)}</b><a href="${esc(e.source_url||'#')}" target="_blank">${esc(e.source)} · ${esc(e.id)} ↗</a><small class="evidence-meta">${esc(e.assertion_kind||'observed').toUpperCase()} · ${esc(e.capture_class||'source_reference').replaceAll('_',' ').toUpperCase()}${e.confidence!=null?` · confidence ${Math.round(e.confidence*100)}%`:''} · ${esc(e.evidence_mode).toUpperCase()} · retrieved ${e.retrieved_at?new Date(e.retrieved_at).toLocaleString():'not recorded'} · ${esc(e.integrity?.transport||'transport not recorded')}</small></div>`;
+let liveStep=0,liveMax=10,livePlaying=true,liveTimer=null;
+const liveList=(id,items)=>{const el=$(id);if(el)el.innerHTML=(items||[]).map(x=>`<li>${esc(x)}</li>`).join('')||'<li>Not available yet.</li>'};
+const liveRun=()=>{clearInterval(liveTimer);liveTimer=setInterval(()=>{if(!livePlaying)return;liveStep=liveStep>=liveMax?0:liveStep+1;loadLiveReview()},2200)};
+async function loadLiveReview(){
+  const data=await fetch(`/api/reconstruction/live-demo?step=${liveStep}`).then(r=>r.json());
+  liveMax=data.max_step;$('liveStep').textContent=`Step ${data.step} / ${data.max_step}`;$('liveKnowledgeTime').textContent=new Date(data.knowledge_time).toLocaleTimeString();
+  const active=data.active_event;$('liveChange').textContent=active.title;$('liveReviewStatus').textContent=data.new_review.created?data.new_review.status:'Not created';
+  $('liveEvents').innerHTML=data.event_stream.map(e=>`<div class="stream-event ${e.index===data.step?'active':''}"><time>${new Date(e.event_time).toLocaleString()}</time><b>${esc(e.title)}</b><small>${esc(e.source)} · ${esc(e.reconstruction_note)}</small></div>`).join('');
+  $('liveChanges').innerHTML=(data.reconstruct_what_changed||[]).slice(0,6).map(c=>`<div><span>${esc(c.subject)}</span><b>${esc(c.before||'—')} → ${esc(c.after||'—')}</b><small>${esc(c.source_system)} · ${new Date(c.event_time).toLocaleString()} · ${esc(c.evidence_strength)}</small></div>`).join('')||'<p>No changes reconstructed yet.</p>';
+  liveList('liveObserved',data.evidence_state.observed);liveList('liveHuman',data.evidence_state.human_asserted);liveList('liveInferred',data.evidence_state.inferred);liveList('liveNotEstablished',data.evidence_state.not_established);
+  liveList('liveInterpretation',data.ai_reasoning_layer.current_interpretation);liveList('liveWhy',data.ai_reasoning_layer.why);liveList('liveContradicts',data.ai_reasoning_layer.what_contradicts_this);liveList('liveReduce',data.ai_reasoning_layer.what_would_reduce_uncertainty);
+  $('liveExposed').textContent=data.where_else.exposed_count;$('livePrecursors').textContent=data.where_else.precursor_count;$('liveCounterexamples').textContent=data.where_else.counterexample_count;$('liveFailures').textContent=data.where_else.matching_failure_count;
+  $('liveGaps').innerHTML=data.reconstructability.coverage.map(x=>`<div class="${esc(x.state).toLowerCase()}"><b>${esc(x.state)}</b><span>${esc(x.field)}</span><small>${esc(x.explanation)}</small></div>`).join('');
+  const decision=data.team_decision.recorded;$('liveDecision').innerHTML=decision?`<h3>${esc(decision.decision)}</h3><p><b>Decision time:</b> ${new Date(decision.decision_time).toLocaleString()}</p><p><b>Evidence available:</b> ${decision.evidence_available_count} records</p><div class="decision-cols"><div><b>Known</b><ul>${decision.known.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div><div><b>Unknown</b><ul>${decision.unknown.map(x=>`<li>${esc(x)}</li>`).join('')}</ul></div></div><small>${esc(decision.historical_context_rule)}</small>`:`<p>No human decision has been recorded yet.</p><div class="decision-options">${data.team_decision.options.map(x=>`<span>${esc(x)}</span>`).join('')}</div>`;
+  const notice=data.new_evidence_notice;$('liveNotice').hidden=!notice;$('liveNotice').innerHTML=notice?`<b>${esc(notice.title)}</b><p>${esc(notice.message)}</p><small>${esc(notice.historical_context)}</small>`:'';
+  $('liveBoundary').textContent=data.data_boundary;
+}
+if($('livePlay')){$('livePlay').onclick=()=>{livePlaying=!livePlaying;$('livePlay').textContent=livePlaying?'Pause':'Play'};$('liveRestart').onclick=()=>{liveStep=0;livePlaying=true;$('livePlay').textContent='Pause';loadLiveReview()};loadLiveReview().then(liveRun)}
 
 async function loadIncidents(){
   const ticket=++loadGeneration;

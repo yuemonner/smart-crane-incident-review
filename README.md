@@ -57,6 +57,28 @@ Run the portable backend report:
 curl http://127.0.0.1:8010/api/reconstruction/demo
 ```
 
+Run the live reconstruction demo:
+
+```powershell
+curl "http://127.0.0.1:8010/api/reconstruction/live-demo?step=9"
+```
+
+The live demo advances through a representative smart-crane review:
+
+```text
+machine change
+→ automatic review creation
+→ what-changed reconstruction
+→ observed / human-asserted / inferred / not-established evidence
+→ bounded AI interpretation
+→ fleet WHERE ELSE? comparison
+→ reconstructability gap check
+→ frozen human decision
+→ late evidence updates the current conclusion without rewriting the historical decision context
+```
+
+The AI reasoning layer is deliberately constrained: backend reconstruction determines what happened, rules classify evidence status, AI explains already reconstructed evidence, and humans record the decision.
+
 The eval suite checks that the engine:
 
 - reconstructs firmware/configuration at incident time;
@@ -124,6 +146,7 @@ Human-recorded owner, checkpoint, and explicit decision fields are stored in `wo
 - `PUT /api/memory/incidents/{id}` saves a local human decision record.
 - `GET /api/demo` returns the complete zero-configuration demo.
 - `GET /api/reconstruction/demo` returns the portable Reconstruction Engine V0 report.
+- `GET /api/reconstruction/live-demo?step=9` returns a stepwise live reconstruction scenario for the product demo.
 - `GET /api/health` reports local service status.
 - `GET /api/sources` reports ADO, ACECO source-contract, and fleet-telemetry connection truthfully.
 - `POST /api/sources/ado/refresh` ingests current ADO evidence into the normalized evidence store.

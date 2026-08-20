@@ -343,3 +343,202 @@ def demo_reconstruction_report() -> dict[str, Any]:
         "reconstructability": engine.analyze_reconstructability("crane-07", decision_time, knowledge_time).model_dump(mode="json"),
         "peer_context": engine.match_peers("crane-07", decision_time).model_dump(mode="json"),
     }
+
+
+LIVE_REVIEW_DECISION_TIME = datetime(2026, 8, 14, 16, 5, tzinfo=timezone.utc)
+
+
+def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
+    """A deterministic event -> reconstruction -> reasoning -> decision demo.
+
+    The dataset is representative synthetic evidence based on connected
+    industrial-equipment workflows. It preserves the structure of deployment,
+    configuration, telemetry, human notes, tests, peer exposure and late
+    counterevidence without exposing proprietary customer records.
+    """
+    world = synthetic_operational_world()
+    incident_time = datetime(2026, 8, 14, 15, 32, tzinfo=timezone.utc)
+    stream = _live_review_stream()
+    max_step = len(stream) - 1
+    step = max(0, min(step, max_step))
+    knowledge_time = stream[step]["knowledge_time"]
+    visible = [e for e in world if e.ingested_at <= knowledge_time]
+    engine = ReconstructionEngine(visible)
+    state_at_review = engine.state_at("crane-07", incident_time, knowledge_time)
+    current_state = ReconstructionEngine(world).state_at("crane-07", incident_time, incident_time + timedelta(hours=8))
+    changes = engine.detect_changes("crane-07", incident_time)
+    reconstructability = engine.analyze_reconstructability("crane-07", incident_time, knowledge_time)
+    peers = engine.match_peers("crane-07", incident_time)
+    evidence_state = _classified_evidence(visible, incident_time, knowledge_time)
+    interpretation = _bounded_interpretation(evidence_state, peers)
+    frozen_decision = _frozen_decision(visible, incident_time, knowledge_time) if step >= 8 else None
+    new_evidence_notice = None
+    if step >= 9:
+        new_evidence_notice = {
+            "title": "New evidence changed the current conclusion",
+            "message": "Late telemetry shows network state was normal before the E-stop. The current interpretation changes, but the 16:05 decision context remains frozen.",
+            "current_conclusion": "Shared deployment issue is less supported than it appeared at the decision time.",
+            "historical_context": "Decision at 16:05 was made before CR07-COUNTER-NETWORK was available.",
+        }
+    return {
+        "step": step,
+        "max_step": max_step,
+        "scenario": "representative_smart_crane_review",
+        "data_boundary": "Representative synthetic evidence derived from real connected-industrial-equipment workflows. No proprietary customer records, IDs, logs or source data are included.",
+        "knowledge_time": knowledge_time.isoformat(),
+        "active_event": stream[step],
+        "event_stream": stream[:step + 1],
+        "machine_change_detected": {
+            "asset_id": "crane-07",
+            "firmware": "4.8 -> 4.9",
+            "configuration": "C16 -> C17",
+            "operator_context": "technician suspected network instability",
+            "telemetry": "notification latency increased before E-stop",
+        },
+        "new_review": {
+            "created": step >= 3,
+            "title": "Crane-07 return-to-service review",
+            "question": "Can Crane-07 return to service after the E-stop?",
+            "status": _readiness_status(evidence_state, reconstructability),
+        },
+        "reconstruct_what_changed": [c.model_dump(mode="json") for c in changes],
+        "state_at_decision": state_at_review.model_dump(mode="json"),
+        "current_state": current_state.model_dump(mode="json"),
+        "evidence_state": evidence_state,
+        "ai_reasoning_layer": interpretation,
+        "where_else": peers.model_dump(mode="json"),
+        "reconstructability": reconstructability.model_dump(mode="json"),
+        "team_decision": {
+            "options": ["Continue investigation", "Hold deployment", "Roll back", "Inspect peer assets", "Return to service"],
+            "recorded": frozen_decision,
+        },
+        "new_evidence_notice": new_evidence_notice,
+    }
+
+
+def _live_review_stream() -> list[dict[str, Any]]:
+    base = datetime(2026, 8, 14, 15, 32, tzinfo=timezone.utc)
+    rows = [
+        (-36.2, "deployment", "Firmware 4.9 deployed", "Azure DevOps + deployment manifest", "Software changed 36h before incident."),
+        (-35.7, "configuration", "Configuration profile C17 activated", "Config audit", "Config changed 35.5h before incident."),
+        (-34.2, "validation", "Notification tests passed; high-load latency test missing", "Azure Test Plans", "Validation exists, but one important stress case is absent."),
+        (-4.0, "telemetry", "Elevated notification persistence latency", "IoT Hub", "First matching telemetry signal appears before the E-stop."),
+        (-0.05, "telemetry", "Notification acknowledgement missing", "IoT Hub", "Runtime signal matches the earlier latency pattern."),
+        (0, "alarm", "E-stop activated during hoisting", "IoT Hub", "Critical trigger freezes a review context."),
+        (0.03, "human_context", "Technician suspected network instability", "Service note", "Human assertion is preserved separately from observed evidence."),
+        (0.55, "fleet_compare", "Peer comparison completed", "Veyra reconstruction engine", "27 peers share firmware/config exposure; 11 show the precursor signal."),
+        (0.55, "decision", "Team decision recorded: hold deployment", "Review workspace", "Decision context is frozen with evidence available at 16:05."),
+        (2.5, "late_counterevidence", "Network telemetry arrived late: normal state before E-stop", "IoT Hub delayed retrieval", "Current conclusion updates without rewriting the 16:05 decision."),
+        (4.0, "outcome", "Limited follow-up test completed without recurrence", "Service review", "Outcome attaches to the original episode."),
+    ]
+    return [
+        {
+            "index": idx,
+            "event_time": (base + timedelta(hours=offset)).isoformat(),
+            "knowledge_time": (base + timedelta(hours=max(offset, 0) + idx * 0.02)).replace(tzinfo=timezone.utc),
+            "type": kind,
+            "title": title,
+            "source": source,
+            "reconstruction_note": note,
+        }
+        for idx, (offset, kind, title, source, note) in enumerate(rows)
+    ]
+
+
+def _classified_evidence(records: list[CanonicalEvidence], incident_time: datetime, knowledge_time: datetime) -> dict[str, list[str]]:
+    ids = {e.id for e in records}
+    observed = []
+    human_asserted = []
+    inferred = []
+    not_established = [
+        "firmware 4.9 caused the E-stop",
+        "the same issue will affect every exposed crane",
+        "operator override parameters were fully captured",
+    ]
+    if "CR07-FW-49" in ids:
+        observed.append("firmware 4.9 deployed")
+    if "CR07-CFG-C17" in ids:
+        observed.append("config C17 activated")
+    if "CR07-TEL-PRE" in ids:
+        observed.append("notification latency increased")
+    if "CR07-ALARM-ESTOP" in ids:
+        observed.append("E-stop occurred during hoisting")
+    if "CR07-COUNTER-NETWORK" in ids:
+        observed.append("late telemetry: network state was normal before E-stop")
+    if "CR07-HUMAN-NETWORK" in ids:
+        human_asserted.append("technician suspected network instability")
+    if {"CR07-FW-49", "CR07-CFG-C17", "CR07-TEL-PRE"} <= ids:
+        inferred.append("software/configuration change may be related to the incident")
+    counterevidence = []
+    if "CR07-COUNTER-NETWORK" in ids:
+        counterevidence.append("network-instability hypothesis is contradicted by late telemetry")
+    return {
+        "observed": observed,
+        "human_asserted": human_asserted,
+        "inferred": inferred,
+        "not_established": not_established,
+        "counterevidence": counterevidence,
+        "knowledge_boundary": [f"Evidence is limited to records ingested by {knowledge_time.isoformat()}"],
+    }
+
+
+def _bounded_interpretation(evidence_state: dict[str, list[str]], peers: PeerContextResult) -> dict[str, Any]:
+    has_late_counter = bool(evidence_state["counterevidence"])
+    plausible = "less supported" if has_late_counter else "plausible but not established"
+    return {
+        "current_interpretation": [
+            "The incident followed a software/configuration change.",
+            f"{peers.exposed_count} peer assets share the same firmware/config exposure.",
+            f"{peers.precursor_count} exposed peers show the same precursor signal.",
+            f"{peers.counterexample_count} exposed peers do not show the precursor signal.",
+            "No matching peer failure has been recorded.",
+            f"A shared deployment issue is {plausible}.",
+        ],
+        "why": [
+            "Deployment and configuration evidence precede the incident.",
+            "The same telemetry pattern appears before the E-stop.",
+            "Peer comparison finds exposed machines with and without the precursor.",
+        ],
+        "what_contradicts_this": [
+            *evidence_state["counterevidence"],
+            "16 exposed peers show no matching precursor signal.",
+            "No peer E-stop failure is currently recorded.",
+        ],
+        "what_would_reduce_uncertainty": [
+            "5-minute local controller trace around the E-stop.",
+            "override actor, reason and exact parameter changes.",
+            "configuration diff for C16 -> C17.",
+            "follow-up test outcome linked to the original decision.",
+        ],
+        "limitation": "AI explains evidence already reconstructed by the backend. It does not create facts or establish causality.",
+    }
+
+
+def _readiness_status(evidence_state: dict[str, list[str]], reconstructability: ReconstructabilityReport) -> str:
+    missing = [item for item in reconstructability.coverage if item.state == CoverageState.missing]
+    if evidence_state["counterevidence"]:
+        return "READY WITH RESIDUAL RISK"
+    if len(missing) >= 2:
+        return "NOT READY"
+    return "INSUFFICIENT EVIDENCE"
+
+
+def _frozen_decision(records: list[CanonicalEvidence], incident_time: datetime, knowledge_time: datetime) -> dict[str, Any]:
+    known = [e for e in records if e.asset_id in ("crane-07", None) and e.ingested_at <= knowledge_time]
+    return {
+        "decision": "Hold deployment",
+        "decision_time": LIVE_REVIEW_DECISION_TIME.isoformat(),
+        "evidence_available_count": len(known),
+        "known": [
+            "firmware 4.9 and config C17 were active",
+            "E-stop and notification latency were observed",
+            "peer exposure existed across the fleet",
+        ],
+        "unknown": [
+            "operator override reason",
+            "local controller state during connectivity loss",
+            "whether firmware/config caused the E-stop",
+        ],
+        "reason_entered_by_team": "Hold deployment until peer exposure and missing controller-state evidence are reviewed.",
+        "historical_context_rule": "Later evidence can change the current conclusion, but it does not rewrite what was knowable at decision time.",
+    }

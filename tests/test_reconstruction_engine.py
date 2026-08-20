@@ -1,6 +1,7 @@
 from datetime import datetime, timedelta, timezone
 
 from app.reconstruction import CoverageState, ReconstructionEngine, synthetic_operational_world
+from app.reconstruction import live_reconstruction_report
 
 
 DECISION_TIME = datetime(2026, 8, 14, 15, 32, tzinfo=timezone.utc)
@@ -77,3 +78,27 @@ def test_generates_minimum_capture_recommendations():
     assert "runtime trace" in capture
     assert "manual override" in capture
     assert "configuration diff" in capture
+
+
+def test_live_demo_creates_review_after_machine_change():
+    report = live_reconstruction_report(5)
+    assert report["new_review"]["created"] is True
+    assert report["machine_change_detected"]["firmware"] == "4.8 -> 4.9"
+    assert "observed" in report["evidence_state"]
+    assert "AI explains evidence" in report["ai_reasoning_layer"]["limitation"]
+
+
+def test_live_demo_preserves_historical_decision_after_late_evidence():
+    before = live_reconstruction_report(8)
+    after = live_reconstruction_report(9)
+    assert before["team_decision"]["recorded"]["decision"] == "Hold deployment"
+    assert after["team_decision"]["recorded"]["decision"] == "Hold deployment"
+    assert after["new_evidence_notice"]["title"] == "New evidence changed the current conclusion"
+    assert "before CR07-COUNTER-NETWORK" in after["new_evidence_notice"]["historical_context"]
+
+
+def test_live_demo_where_else_includes_counterexamples():
+    report = live_reconstruction_report(7)
+    assert report["where_else"]["exposed_count"] == 27
+    assert report["where_else"]["precursor_count"] == 11
+    assert report["where_else"]["counterexample_count"] == 16

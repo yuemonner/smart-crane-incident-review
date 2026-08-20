@@ -8,7 +8,7 @@
 <body data-lens="director">
   <aside><div class="brand"><span>AC</span> SMART CRANE</div><p class="eyebrow">DECISION REVIEW</p>
     <div class="role-switch"><span>DECISION LENS</span><button data-role="director" class="active">Director</button><button data-role="team">Team Review</button></div>
-    <nav><small>DIRECTOR</small><button data-view="overview" data-level="director" class="active">▦ <b>Decision overview</b></button><small>TEAM REVIEW</small><button data-view="incident" data-level="team">◎ What happened?</button><button data-view="changed" data-level="team">↗ What changed?</button><button data-view="where" data-level="team">⌁ Device or deployment?</button><button data-view="evidence-gaps" data-level="team">◇ What would we need next time?</button></nav>
+    <nav><small>DIRECTOR</small><button data-view="overview" data-level="director" class="active">▦ <b>Decision overview</b></button><button data-view="live-reconstruction" data-level="director">◉ Live reconstruction</button><small>TEAM REVIEW</small><button data-view="incident" data-level="team">◎ What happened?</button><button data-view="changed" data-level="team">↗ What changed?</button><button data-view="where" data-level="team">⌁ Device or deployment?</button><button data-view="evidence-gaps" data-level="team">◇ What would we need next time?</button></nav>
     <div class="safety"><i></i><div><strong>Read-only mode</strong><small>No device control or source writes</small></div></div>
   </aside>
   <main>
@@ -31,6 +31,28 @@
       <article class="panel escalation"><span class="eyebrow">WHY IS THIS ON MY SCREEN?</span><h3 id="escalationTitle">Evaluating explicit escalation rules</h3><ul id="escalationReasons"></ul><small>Rule-backed only. This section does not infer operational risk or recommend action.</small></article>
       <article class="panel knowledge-state"><span class="eyebrow">AT 15:40 · WHAT DID THE TEAM KNOW?</span><div class="knowledge-grid"><div><b>Observed</b><ul id="ksObserved"></ul></div><div><b>Suspected</b><ul id="ksSuspected"></ul></div><div><b>Not known</b><ul id="ksUnknown"></ul></div><div><b>Counterevidence</b><ul id="ksCounter"></ul></div></div></article>
       <article class="panel memory"><span class="eyebrow">DECISION AT 16:05</span><p><b>Continue investigation. Do not roll back yet.</b></p><p>Record the human decision, the evidence available at that time, and what happened next. Later evidence may change today’s conclusion but will not rewrite this decision context.</p><div class="memory-grid"><input id="memoryOwner" placeholder="Owner"><input id="memoryCheckpoint" type="datetime-local"><select id="memoryDecision"><option value="">Decision not recorded</option><option>Test again</option><option>Rollback</option><option>Redeploy</option><option>Hold production deployment</option><option>Continue investigation</option></select><input id="memoryOutcome" placeholder="Observed outcome after the decision"><button id="saveMemory">Save local record</button></div><small id="memoryMessage"></small></article>
+    </section>
+    <section id="live-reconstruction" class="view">
+      <div class="live-hero panel">
+        <div><p class="eyebrow">LIVE RECONSTRUCTION DEMO</p><h2>Event → reconstruction → reasoning → decision</h2><p class="lede">Representative Smart Crane evidence streams in over time. Veyra reconstructs what changed, separates evidence types, compares peer assets, and preserves the human decision context.</p></div>
+        <div class="live-controls"><button id="livePlay">Pause</button><button id="liveRestart">Restart</button><b id="liveStep">Step 0 / 10</b></div>
+      </div>
+      <section class="machine-change panel"><div><span>MACHINE CHANGE DETECTED</span><b id="liveChange">Waiting for evidence…</b></div><div><span>NEW REVIEW</span><b id="liveReviewStatus">Not created</b></div><div><span>KNOWLEDGE TIME</span><b id="liveKnowledgeTime">—</b></div></section>
+      <div id="liveNotice" class="late-notice" hidden></div>
+      <div class="live-layout">
+        <article class="panel live-stream"><span class="eyebrow">EVENT STREAM</span><div id="liveEvents"></div></article>
+        <article class="panel"><span class="eyebrow">RECONSTRUCT WHAT CHANGED</span><div id="liveChanges" class="mini-diff"></div></article>
+      </div>
+      <div class="live-layout">
+        <article class="panel evidence-state"><span class="eyebrow">BUILD THE EVIDENCE STATE</span><div class="evidence-columns"><div><b>Observed</b><ul id="liveObserved"></ul></div><div><b>Human asserted</b><ul id="liveHuman"></ul></div><div><b>Inferred</b><ul id="liveInferred"></ul></div><div><b>Not established</b><ul id="liveNotEstablished"></ul></div></div></article>
+        <article class="panel reasoning"><span class="eyebrow">AI REASONING LAYER</span><p class="reasoning-rule">AI explains reconstructed evidence. It does not create facts or establish causality.</p><h3>Current interpretation</h3><ul id="liveInterpretation"></ul><details open><summary>Why?</summary><ul id="liveWhy"></ul></details><details><summary>What contradicts this?</summary><ul id="liveContradicts"></ul></details><details><summary>What would reduce uncertainty?</summary><ul id="liveReduce"></ul></details></article>
+      </div>
+      <div class="metrics live-metrics"><article><span>SAME FIRMWARE / CONFIG</span><strong id="liveExposed">—</strong><small>peer assets</small></article><article class="hot"><span>SAME PRECURSOR SIGNAL</span><strong id="livePrecursors">—</strong><small>peers</small></article><article><span>COUNTEREXAMPLES</span><strong id="liveCounterexamples">—</strong><small>exposed without signal</small></article><article><span>MATCHING FAILURES</span><strong id="liveFailures">—</strong><small>peer incidents</small></article></div>
+      <div class="live-layout">
+        <article class="panel"><span class="eyebrow">WHAT CAN'T WE RECONSTRUCT?</span><div id="liveGaps" class="gap-check"></div></article>
+        <article class="panel team-decision"><span class="eyebrow">TEAM DECISION</span><div id="liveDecision"></div></article>
+      </div>
+      <article class="panel data-boundary"><span class="eyebrow">DATA BOUNDARY</span><p id="liveBoundary"></p></article>
     </section>
     <section id="where" class="view">
       <div class="hero"><div><p class="eyebrow">SCOPE THE EPISODE</p><h2>Device-specific or deployment-wide?</h2><p class="lede">Compare the incident evidence with peer devices before deciding to test, rollback, redeploy, or hold.</p></div><div class="signature"><span>COMPARISON SIGNATURE</span><code>software version</code><b>+</b><code>configuration</code><b>+</b><code>machine signal</code></div></div>
