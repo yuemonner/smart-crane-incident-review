@@ -6,8 +6,8 @@ from psycopg.rows import dict_row
 from .models import EvidenceEvent, EvidenceMode, EvidenceType, IntegrityStatus
 
 
-class AcecoPostgresReadOnlyConnector:
-    """Bounded, read-only access to ACECO operational evidence.
+class SmartCranePostgresReadOnlyConnector:
+    """Bounded, read-only access to Smart Crane operational evidence.
 
     The adapter intentionally has no generic query facility and never reads the
     edge_users table. The session and every transaction are forced read-only.
@@ -60,15 +60,15 @@ class AcecoPostgresReadOnlyConnector:
                     id=f"PG-faults-{row['id']}", type=EvidenceType.alarm,
                     occurred_at=row["created_date"], entity_id=row["crane_uuid"],
                     title=f"{row['fault_code']}: {row['fault_text']}",
-                    source="ACECO edge PostgreSQL · faults",
-                    source_url=f"aceco-db://api_edge/faults/{row['id']}",
+                    source="Smart Crane edge PostgreSQL · faults",
+                    source_url=f"smart_crane-db://api_edge/faults/{row['id']}",
                     retrieved_at=retrieved_at, evidence_mode=EvidenceMode.live,
                     integrity=IntegrityStatus(transport="PostgreSQL TLS/tunnel state not attested",
                         limitation="Read from the operational edge database; no cryptographic source signature or chain of custody was verified."),
                     attributes={"record_id": row["id"], "edge_uuid": row["edge_uuid"],
                                 "motion_uuid": row["motion_uuid"], "fault_code": row["fault_code"],
                                 "duration_seconds": row["duration"], "sync_date": row["sync_date"],
-                                "provenance": "live read-only ACECO edge database"}))
+                                "provenance": "live read-only Smart Crane edge database"}))
             cur.execute("""
                 SELECT id, crane_uuid, edge_uuid, motion_uuid, event_uuid,
                        event_name, event_actions, created_date, is_synchronized
@@ -80,8 +80,8 @@ class AcecoPostgresReadOnlyConnector:
                     id=f"PG-notifications-{row['id']}", type=EvidenceType.device_event,
                     occurred_at=row["created_date"], entity_id=row["crane_uuid"],
                     title=f"Notification: {row['event_name']}",
-                    source="ACECO edge PostgreSQL · notifications",
-                    source_url=f"aceco-db://api_edge/notifications/{row['id']}",
+                    source="Smart Crane edge PostgreSQL · notifications",
+                    source_url=f"smart_crane-db://api_edge/notifications/{row['id']}",
                     retrieved_at=retrieved_at, evidence_mode=EvidenceMode.live,
                     integrity=IntegrityStatus(transport="PostgreSQL TLS/tunnel state not attested",
                         limitation="Read from the operational edge database; no cryptographic source signature or chain of custody was verified."),
@@ -90,5 +90,5 @@ class AcecoPostgresReadOnlyConnector:
                                 "event_actions": row["event_actions"],
                                 "is_synchronized": row["is_synchronized"],
                                 "patterns": ["notification_event"],
-                                "provenance": "live read-only ACECO edge database"}))
+                                "provenance": "live read-only Smart Crane edge database"}))
         return sorted(events, key=lambda event: event.occurred_at)

@@ -39,7 +39,7 @@ When a human decision is recorded, the application also freezes the observed fac
 
 ## Reconstruction Engine V0
 
-The backend now includes a portable reconstruction core that does not depend on ACECO private data or any single ICP.
+The backend now includes a portable reconstruction core that does not depend on private customer data or any single ICP.
 
 It proves five reusable capabilities:
 
@@ -119,15 +119,15 @@ Copy `.env.example` to `.env` and set `ADO_ORG`, `ADO_PROJECT`, and `ADO_PAT`. U
 
 The normalized `EvidenceEvent` model supports commits, pull requests, builds, deployments, tests, configuration changes, device events, and alarms. `POST /api/evidence` is local application ingestion only—it does not write back to any source or device. There is no device-control path in the application.
 
-## Optional live ACECO PostgreSQL evidence
+## Optional live Smart Crane PostgreSQL evidence
 
-Create an SSH tunnel to the edge host, then set the `ACECO_POSTGRES_*` values shown in `.env.example`. Use only a dedicated account with `SELECT` grants and `default_transaction_read_only=on`.
+Create an SSH tunnel to the edge host, then set the `SMART_CRANE_POSTGRES_*` values shown in `.env.example`. Use only a dedicated account with `SELECT` grants and `default_transaction_read_only=on`.
 
 The connector independently forces every database session into read-only mode. It runs fixed, bounded queries against only `faults` and `notifications`; it explicitly excludes `edge_users` and exposes no arbitrary SQL facility. Check the connection with `GET /api/sources`, then ingest normalized evidence with `POST /api/sources/postgres/refresh`.
 
 ## Optional live Cosmos physical telemetry
 
-Set the `ACECO_COSMOS_*` values in `.env` using a dedicated read-only Cassandra identity. `POST /api/sources/cosmos/refresh` runs one bounded `SELECT` against `cloud_core.crane_telemetry` for a selected edge UUID and time window. It normalizes physical fields such as drive alarms/faults, load, current, torque, output frequency, temperature, and drive-ready state. No generic CQL endpoint and no write operation exist.
+Set the `SMART_CRANE_COSMOS_*` values in `.env` using a dedicated read-only Cassandra identity. `POST /api/sources/cosmos/refresh` runs one bounded `SELECT` against `cloud_core.crane_telemetry` for a selected edge UUID and time window. It normalizes physical fields such as drive alarms/faults, load, current, torque, output frequency, temperature, and drive-ready state. No generic CQL endpoint and no write operation exist.
 
 Browser access to Azure Portal is not treated as an application credential. Until the Cassandra connection succeeds, the UI says telemetry is offline. Per-row hashes document the retrieved normalized content, but do **not** prove source immutability, clock accuracy, sensor calibration, or legal chain of custody.
 
@@ -135,7 +135,7 @@ Browser access to Azure Portal is not treated as an application credential. Unti
 
 Demo, cached, partial, and live records are separate workspaces. Queries never silently combine them. The incident selector is generated from alarm records in the selected mode. Source retrieval timestamps and integrity limitations are shown beside evidence.
 
-Human-recorded owner, checkpoint, and explicit decision fields are stored in `work/incident_memory.sqlite3`. This is local application memory only; it never writes to ACECO Cloud, ADO, databases, or devices.
+Human-recorded owner, checkpoint, and explicit decision fields are stored in `work/incident_memory.sqlite3`. This is local application memory only; it never writes to Smart Crane Cloud, ADO, databases, or devices.
 
 ## Core endpoints
 
@@ -148,10 +148,10 @@ Human-recorded owner, checkpoint, and explicit decision fields are stored in `wo
 - `GET /api/reconstruction/demo` returns the portable Reconstruction Engine V0 report.
 - `GET /api/reconstruction/live-demo?step=9` returns a stepwise live reconstruction scenario for the product demo.
 - `GET /api/health` reports local service status.
-- `GET /api/sources` reports ADO, ACECO source-contract, and fleet-telemetry connection truthfully.
+- `GET /api/sources` reports ADO, Smart Crane source-contract, and fleet-telemetry connection truthfully.
 - `POST /api/sources/ado/refresh` ingests current ADO evidence into the normalized evidence store.
-- `POST /api/sources/local/refresh` ingests timestamped ACECO engineering/log evidence while excluding connection notes and secret-bearing lines.
-- `POST /api/sources/postgres/refresh` ingests bounded live ACECO fault and notification evidence using an enforced read-only session.
+- `POST /api/sources/local/refresh` ingests timestamped Smart Crane engineering/log evidence while excluding connection notes and secret-bearing lines.
+- `POST /api/sources/postgres/refresh` ingests bounded live Smart Crane fault and notification evidence using an enforced read-only session.
 - `POST /api/sources/cosmos/refresh` ingests bounded live physical telemetry for one crane and time window.
 - `POST /api/capture/trace` adds a lightweight sample to the bounded operational ring buffer.
 - `POST /api/capture/critical-snapshot` freezes a critical machine-decision snapshot and appends it to the evidence ledger.

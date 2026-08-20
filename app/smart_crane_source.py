@@ -1,14 +1,14 @@
 from pathlib import Path
 
 
-class AcecoSourceCatalog:
-    """Discovers integration contracts from local ACECO source without executing it."""
+class SmartCraneSourceCatalog:
+    """Discovers integration contracts from local Smart Crane source without executing it."""
     EXPECTED = {
         "cloud_iot_listener": "cloud-backend/ac-backend-iot-hub-listener/ac_backend_iot_hub_listener/handlers/telemetry.py",
         "edge_deployment": "edge-modules/src/deployment.template.json",
         "edge_pipeline": "edge-modules/azure-pipelines.yml",
-        "telemetry_model": "core/aceco_core/models.py",
-        "cassandra_telemetry": "core/aceco_core/cassandra/crane_telemetry.py",
+        "telemetry_model": "core/smart_crane_core/models.py",
+        "cassandra_telemetry": "core/smart_crane_core/cassandra/crane_telemetry.py",
         "event_model": "cloud-frontend/ac-frontend-rest-api/ac_frontend_rest_api/api/events/models.py",
     }
 

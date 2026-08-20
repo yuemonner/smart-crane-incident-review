@@ -8,7 +8,7 @@ TIMESTAMP = re.compile(r"(?P<ts>20\d\d-\d\d-\d\d[ T]\d\d:\d\d:\d\d)")
 DEVICE = re.compile(r"\b(?:device|ubuntu@)[^\w]*(?P<id>[a-f0-9]{12}|[a-f0-9-]{36})\b", re.I)
 SECRET = re.compile(r"(?i)(password|passwd|token|secret|authorization|bearer|connection string)")
 SIGNALS = {
-    "redis_connection_refused": re.compile(r"Redis.*(?:Connection refused|Error 111)|connecting to aceco-edge-redis", re.I),
+    "redis_connection_refused": re.compile(r"Redis.*(?:Connection refused|Error 111)|connecting to smart_crane-edge-redis", re.I),
     "redis_timeout": re.compile(r"Timeout connecting to server|Redis.*timeout", re.I),
     "module_taskgroup_failure": re.compile(r"Unhandled exception|TaskGroup", re.I),
     "iot_duplicate_connection": re.compile(r"MultipleConnectionsException|Multiple connections detected", re.I),
@@ -19,8 +19,8 @@ SIGNALS = {
 }
 
 
-class LocalAcecoEvidenceConnector:
-    """Read-only parser for local ACECO engineering notes and bounded log captures."""
+class LocalSmartCraneEvidenceConnector:
+    """Read-only parser for local Smart Crane engineering notes and bounded log captures."""
     def __init__(self, root: str):
         self.root = Path(root)
 
@@ -37,7 +37,7 @@ class LocalAcecoEvidenceConnector:
             if p.is_file()
             and p.suffix.lower() in {".md", ".txt", ".vtt"}
             and any(x in p.name.lower() for x in
-                    ("aceco", "crane", "redis", "e-stop", "edge", "onboarding", "walkthrough"))
+                    ("smart_crane", "crane", "redis", "e-stop", "edge", "onboarding", "walkthrough"))
         )
 
     def collect(self) -> list[EvidenceEvent]:

@@ -7,7 +7,7 @@ from .models import EvidenceEvent, EvidenceMode, EvidenceType, IntegrityStatus
 
 
 class CosmosTelemetryReadOnlyConnector:
-    """Bounded read-only reader for the ACECO Cosmos Cassandra telemetry table."""
+    """Bounded read-only reader for the Smart Crane Cosmos Cassandra telemetry table."""
 
     def __init__(self, host, port, username, password, keyspace="cloud_core"):
         self.host, self.port, self.username, self.password = host, port, username, password
@@ -64,7 +64,7 @@ class CosmosTelemetryReadOnlyConnector:
                 events.append(EvidenceEvent(id=f"COSMOS-{row.edge_uuid}-{row.motion_uuid}-{index}-{digest[:10]}",
                     type=EvidenceType.alarm if signal["alarm"] else EvidenceType.device_event,
                     occurred_at=row.query_timestamp, entity_id=row.edge_uuid,
-                    title=signal["title"], source="ACECO Cosmos Cassandra · crane_telemetry",
+                    title=signal["title"], source="Smart Crane Cosmos Cassandra · crane_telemetry",
                     source_url=None, retrieved_at=retrieved_at, evidence_mode=EvidenceMode.live,
                     integrity=IntegrityStatus(transport="TLS", content_hash=digest,
                         limitation="Hash covers the normalized row at retrieval time; it does not prove source immutability, clock accuracy, calibration, or legal chain of custody."),

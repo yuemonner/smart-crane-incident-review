@@ -12,8 +12,8 @@ class CloudLogin(BaseModel):
     password: SecretStr
 
 
-class AcecoCloudReadOnlyConnector:
-    """ACECO cloud client with an explicit GET-only operational allowlist."""
+class SmartCraneCloudReadOnlyConnector:
+    """Smart Crane cloud client with an explicit GET-only operational allowlist."""
 
     ALLOWED = ("/auth/status/", "/dashboard/", "/cranes/", "/customers/",
                "/sites/", "/locations/", "/crane-systems/")
@@ -39,14 +39,14 @@ class AcecoCloudReadOnlyConnector:
             self._refresh_token = tokens.get("refresh_token")
             user = await self._get("/auth/status/")
         return {"connected": True, "user": user.get("username") or user.get("email"),
-                "scope": "GET-only ACECO investigation allowlist", "credentials_stored": False}
+                "scope": "GET-only Smart Crane investigation allowlist", "credentials_stored": False}
 
     def disconnect(self):
         self._access_token = self._refresh_token = None
 
     async def _get(self, path: str, params: dict | None = None):
         if not self.connected:
-            raise RuntimeError("ACECO Cloud is not connected")
+            raise RuntimeError("Smart Crane Cloud is not connected")
         if not (path in self.ALLOWED or
                 (path.startswith("/cranes/") and any(path.endswith(s) for s in
                  ("/config/", "/params/", "/status/", "/versions/", "/hc/")))):
@@ -85,10 +85,10 @@ class AcecoCloudReadOnlyConnector:
             occurred = latest.get("created_at") or crane.get("updated_date") or crane.get("created_date")
             if occurred:
                 events.append(EvidenceEvent(
-                    id=f"ACECO-cloud-config-{crane_id}-{latest.get('version', crane.get('version'))}",
+                    id=f"Smart Crane-cloud-config-{crane_id}-{latest.get('version', crane.get('version'))}",
                     type=EvidenceType.config_change, occurred_at=occurred, entity_id=entity,
                     title=f"Configuration version {latest.get('version', crane.get('version', 'unknown'))}",
-                    source="ACECO Cloud REST API · crane versions",
+                    source="Smart Crane Cloud REST API · crane versions",
                     source_url=f"{self.base_url}/cranes/{crane_id}/versions/",
                     retrieved_at=retrieved_at, evidence_mode=EvidenceMode.live,
                     integrity=IntegrityStatus(transport="HTTPS",
@@ -99,7 +99,7 @@ class AcecoCloudReadOnlyConnector:
                                 "notes": latest.get("notes"),
                                 "customer": customer_by_id.get(str(crane.get("customer") or crane.get("customer_id"))),
                                 "site": (site_by_id.get(str(crane.get("site") or crane.get("site_id"))) or {}).get("name"),
-                                "provenance": "live ACECO Cloud GET response"}))
+                                "provenance": "live Smart Crane Cloud GET response"}))
             asset = {k: crane.get(k) for k in
                            ("id", "device_id", "crane_uuid", "crane_name", "job_number",
                             "serial_number", "crane_capacity", "capacity_unit", "active", "version", "status")}

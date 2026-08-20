@@ -1,6 +1,6 @@
 from datetime import datetime, timezone
 
-from app.postgres import AcecoPostgresReadOnlyConnector
+from app.postgres import SmartCranePostgresReadOnlyConnector
 
 
 class FakeCursor:
@@ -30,7 +30,7 @@ class FakeConnection:
 
 
 def test_postgres_normalizes_only_operational_evidence(monkeypatch):
-    connector = AcecoPostgresReadOnlyConnector("host", 5432, "db", "reader", "secret")
+    connector = SmartCranePostgresReadOnlyConnector("host", 5432, "db", "reader", "secret")
     monkeypatch.setattr(connector, "_connect", lambda: FakeConnection())
     events = connector.collect(datetime(2026, 1, 1, tzinfo=timezone.utc))
     assert [event.id for event in events] == ["PG-faults-9", "PG-notifications-10"]

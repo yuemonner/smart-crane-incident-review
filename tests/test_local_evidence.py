@@ -1,8 +1,8 @@
-from app.local_evidence import LocalAcecoEvidenceConnector
+from app.local_evidence import LocalSmartCraneEvidenceConnector
 
 
 def test_real_local_reliability_evidence_is_parsed_without_secrets(tmp_path):
-    evidence = tmp_path / "aceco-edge-redis-log.txt"
+    evidence = tmp_path / "smart_crane-edge-redis-log.txt"
     evidence.write_text(
         "\n".join([
             "device a395b49cb6d5",
@@ -11,7 +11,7 @@ def test_real_local_reliability_evidence_is_parsed_without_secrets(tmp_path):
             "2026-08-14 14:33:00 password should never become evidence",
         ])
     )
-    connector = LocalAcecoEvidenceConnector(str(tmp_path))
+    connector = LocalSmartCraneEvidenceConnector(str(tmp_path))
     events = connector.collect()
     patterns = {p for event in events for p in event.attributes["patterns"]}
     assert "redis_connection_refused" in patterns

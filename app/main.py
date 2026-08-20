@@ -7,36 +7,36 @@ from fastapi.staticfiles import StaticFiles
 
 from .fixtures import INCIDENT_TIME, demo_events
 from .ado import AzureDevOpsReadOnlyConnector
-from .aceco import AcecoSourceCatalog
+from .smart_crane_source import SmartCraneSourceCatalog
 from .models import (CaptureClass, CriticalSnapshot, EvidenceEvent, EvidenceMode,
                      IncidentRecord, IncidentRequest, IncidentSummary, Investigation,
                      WhereElseResult)
 from .service import EvidenceService
 from .settings import settings
-from .local_evidence import LocalAcecoEvidenceConnector
-from .postgres import AcecoPostgresReadOnlyConnector
-from .aceco_cloud import AcecoCloudReadOnlyConnector, CloudLogin
+from .local_evidence import LocalSmartCraneEvidenceConnector
+from .postgres import SmartCranePostgresReadOnlyConnector
+from .smart_crane_cloud import SmartCraneCloudReadOnlyConnector, CloudLogin
 from .memory import IncidentMemory
 from .cosmos import CosmosTelemetryReadOnlyConnector
 from .ledger import EvidenceLedger
 from .capture import RuntimeCapture, TraceSample
 from .reconstruction import demo_reconstruction_report, live_reconstruction_report
 
-app = FastAPI(title="ACECO Smart Crane Incident API", version="0.1.0",
+app = FastAPI(title="Smart Crane Incident API", version="0.1.0",
               description="Read-only cyber-physical incident reconstruction and fleet exposure analysis")
 service = EvidenceService(demo_events())
-catalog = AcecoSourceCatalog(settings.aceco_source_root)
-local_evidence = LocalAcecoEvidenceConnector(settings.aceco_notes_root)
-postgres = AcecoPostgresReadOnlyConnector(
-    settings.aceco_postgres_host, settings.aceco_postgres_port,
-    settings.aceco_postgres_database, settings.aceco_postgres_user,
-    settings.aceco_postgres_password)
-cloud = AcecoCloudReadOnlyConnector(settings.aceco_cloud_api_url)
+catalog = SmartCraneSourceCatalog(settings.smart_crane_source_root)
+local_evidence = LocalSmartCraneEvidenceConnector(settings.smart_crane_notes_root)
+postgres = SmartCranePostgresReadOnlyConnector(
+    settings.smart_crane_postgres_host, settings.smart_crane_postgres_port,
+    settings.smart_crane_postgres_database, settings.smart_crane_postgres_user,
+    settings.smart_crane_postgres_password)
+cloud = SmartCraneCloudReadOnlyConnector(settings.smart_crane_cloud_api_url)
 memory = IncidentMemory(settings.incident_memory_path)
 ledger = EvidenceLedger(settings.evidence_ledger_path)
 runtime_capture = RuntimeCapture()
-cosmos = CosmosTelemetryReadOnlyConnector(settings.aceco_cosmos_host, settings.aceco_cosmos_port,
-    settings.aceco_cosmos_username, settings.aceco_cosmos_password, settings.aceco_cosmos_keyspace)
+cosmos = CosmosTelemetryReadOnlyConnector(settings.smart_crane_cosmos_host, settings.smart_crane_cosmos_port,
+    settings.smart_crane_cosmos_username, settings.smart_crane_cosmos_password, settings.smart_crane_cosmos_keyspace)
 fleet_identity: dict = {"cranes": [], "customers": [], "sites": [], "retrieved_at": None}
 STATIC = Path(__file__).parent / "static"
 app.mount("/static", StaticFiles(directory=STATIC), name="static")
@@ -57,9 +57,9 @@ def index():
 
 @app.get("/api/health")
 def health():
-    return {"status": "ok", "mode": "demo" if settings.aceco_demo_mode else "live",
+    return {"status": "ok", "mode": "demo" if settings.smart_crane_demo_mode else "live",
             "evidence_events": len(service.events), "ado_configured": bool(settings.ado_pat),
-            "aceco_sources": catalog.status()["connected"]}
+            "smart_crane_sources": catalog.status()["connected"]}
 
 
 @app.get("/api/sources")
@@ -87,9 +87,9 @@ async def sources():
     except Exception as exc:
         cosmos_status = {"configured": cosmos.configured, "connected": False,
                          "error": f"{type(exc).__name__}: connection unavailable"}
-    return {"azure_devops": ado, "aceco_code": catalog.status(), "local_evidence": local_evidence.status(),
-            "aceco_postgres": postgres_status,
-            "aceco_cloud": cloud_status,
+    return {"azure_devops": ado, "smart_crane_code": catalog.status(), "local_evidence": local_evidence.status(),
+            "smart_crane_postgres": postgres_status,
+            "smart_crane_cloud": cloud_status,
             "fleet_telemetry": cosmos_status}
 
 
@@ -111,52 +111,52 @@ def refresh_local():
     incoming = local_evidence.collect()
     added, _ = add_events(incoming)
     return {"fetched": len(incoming), "added": len(added), "total_evidence": len(service.events),
-            "source": "local ACECO notes and bounded logs"}
+            "source": "local Smart Crane notes and bounded logs"}
 
 
 @app.post("/api/sources/postgres/refresh")
 def refresh_postgres():
     if not postgres.configured:
-        raise HTTPException(503, "ACECO PostgreSQL is not configured")
+        raise HTTPException(503, "Smart Crane PostgreSQL is not configured")
     try:
         incoming = postgres.collect()
     except Exception as exc:
-        raise HTTPException(502, f"ACECO PostgreSQL read failed: {type(exc).__name__}") from exc
+        raise HTTPException(502, f"Smart Crane PostgreSQL read failed: {type(exc).__name__}") from exc
     added, _ = add_events(incoming)
     return {"fetched": len(incoming), "added": len(added), "total_evidence": len(service.events),
-            "source": "live read-only ACECO PostgreSQL", "tables": ["faults", "notifications"]}
+            "source": "live read-only Smart Crane PostgreSQL", "tables": ["faults", "notifications"]}
 
 
 @app.post("/api/sources/cosmos/refresh")
 def refresh_cosmos(request: IncidentRequest):
     if not cosmos.configured:
-        raise HTTPException(503, "ACECO Cosmos Cassandra is not configured")
+        raise HTTPException(503, "Smart Crane Cosmos Cassandra is not configured")
     try:
         incoming = cosmos.collect(request.entity_id, request.incident_time, request.window_hours)
     except Exception as exc:
         raise HTTPException(502, f"Cosmos telemetry read failed: {type(exc).__name__}") from exc
     added, _ = add_events(incoming)
     return {"fetched": len(incoming), "added": len(added), "total_evidence": len(service.events),
-            "source": "live read-only ACECO Cosmos Cassandra", "table": "cloud_core.crane_telemetry"}
+            "source": "live read-only Smart Crane Cosmos Cassandra", "table": "cloud_core.crane_telemetry"}
 
 
-@app.post("/api/sources/aceco-cloud/login")
-async def login_aceco_cloud(credentials: CloudLogin):
+@app.post("/api/sources/smart-crane-cloud/login")
+async def login_smart_crane_cloud(credentials: CloudLogin):
     try:
         return await cloud.login(credentials)
     except httpx.HTTPStatusError as exc:
-        raise HTTPException(401, "ACECO Cloud login failed") from exc
+        raise HTTPException(401, "Smart Crane Cloud login failed") from exc
 
 
-@app.post("/api/sources/aceco-cloud/refresh")
-async def refresh_aceco_cloud():
+@app.post("/api/sources/smart-crane-cloud/refresh")
+async def refresh_smart_crane_cloud():
     global fleet_identity
     if not cloud.connected:
-        raise HTTPException(401, "Connect ACECO Cloud first")
+        raise HTTPException(401, "Connect Smart Crane Cloud first")
     try:
         result = await cloud.collect()
     except httpx.HTTPError as exc:
-        raise HTTPException(502, "ACECO Cloud read failed") from exc
+        raise HTTPException(502, "Smart Crane Cloud read failed") from exc
     added, _ = add_events(result["events"])
     fleet_identity = {key: result.get(key, []) for key in ("cranes", "customers", "sites")}
     fleet_identity["retrieved_at"] = result.get("retrieved_at")
@@ -165,8 +165,8 @@ async def refresh_aceco_cloud():
             "total_evidence": len(service.events), "mode": "live GET-only"}
 
 
-@app.post("/api/sources/aceco-cloud/disconnect")
-def disconnect_aceco_cloud():
+@app.post("/api/sources/smart-crane-cloud/disconnect")
+def disconnect_smart_crane_cloud():
     cloud.disconnect()
     return {"connected": False}
 

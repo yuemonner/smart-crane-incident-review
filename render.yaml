@@ -6,5 +6,5 @@ services:
     healthCheckPath: /api/health
     autoDeploy: true
     envVars:
-      - key: ACECO_DEMO_MODE
+      - key: SMART_CRANE_DEMO_MODE
         value: "true"
