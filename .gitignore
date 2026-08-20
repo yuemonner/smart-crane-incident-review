@@ -1,0 +1,11 @@
+.env
+.venv/
+__pycache__/
+.pytest_cache/
+work/
+*.sqlite3
+*.db
+*.log
+outputs/
+.openai/
+site-deploy/

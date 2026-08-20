@@ -1,0 +1,12 @@
+.env
+.git
+.pytest_cache
+.venv
+__pycache__
+work
+outputs
+tests
+site-deploy
+*.sqlite3
+*.db
+*.log

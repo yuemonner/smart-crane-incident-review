@@ -1,0 +1,10 @@
+services:
+  - type: web
+    name: smart-crane-incident-review
+    runtime: docker
+    plan: free
+    healthCheckPath: /api/health
+    autoDeploy: false
+    envVars:
+      - key: ACECO_DEMO_MODE
+        value: "true"
