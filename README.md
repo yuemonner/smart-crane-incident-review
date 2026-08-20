@@ -49,6 +49,12 @@ It proves five reusable capabilities:
 4. **Reconstructability analysis** — marks fields as `COMPLETE`, `PARTIAL` or `MISSING` and recommends minimum future capture.
 5. **Peer context matching** — finds assets with the same firmware/config signature, matching precursor signals and counterexamples.
 
+It also introduces three backend primitives for the operational learning layer:
+
+- **ContextSignature** — the reusable fingerprint of firmware, configuration, precursor signal, alarm, missing fields and source evidence.
+- **OperationalEpisode** — the reviewed unit of machine state, knowledge state, intervention, human decision and outcome.
+- **OutcomeRecord** — the follow-up result attached to a decision episode, used for future retrieval and learning.
+
 The synthetic world creates 50 cranes with mixed firmware, configuration, telemetry, human assertions, late-arriving counterevidence and missing intervention context. It exists to test reconstruction logic before connecting proprietary customer systems.
 
 Run the portable backend report:
@@ -61,6 +67,12 @@ Run the live reconstruction demo:
 
 ```powershell
 curl "http://127.0.0.1:8010/api/reconstruction/live-demo?step=9"
+```
+
+Run the operational learning report:
+
+```powershell
+curl http://127.0.0.1:8010/api/reconstruction/learning
 ```
 
 The live demo advances through a representative smart-crane review:
@@ -149,6 +161,7 @@ Human-recorded owner, checkpoint, and explicit decision fields are stored in `wo
 - `GET /api/demo` returns the complete zero-configuration demo.
 - `GET /api/reconstruction/demo` returns the portable Reconstruction Engine V0 report.
 - `GET /api/reconstruction/live-demo?step=9` returns a stepwise live reconstruction scenario for the product demo.
+- `GET /api/reconstruction/learning` returns the operational episode, similar-context learning report, and context graph.
 - `GET /api/health` reports local service status.
 - `GET /api/sources` reports ADO, Smart Crane source-contract, and fleet-telemetry connection truthfully.
 - `POST /api/sources/ado/refresh` ingests current ADO evidence into the normalized evidence store.

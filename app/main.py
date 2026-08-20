@@ -20,7 +20,7 @@ from .memory import IncidentMemory
 from .cosmos import CosmosTelemetryReadOnlyConnector
 from .ledger import EvidenceLedger
 from .capture import RuntimeCapture, TraceSample
-from .reconstruction import demo_reconstruction_report, live_reconstruction_report
+from .reconstruction import demo_learning_report, demo_reconstruction_report, live_reconstruction_report
 
 app = FastAPI(title="Smart Crane Incident API", version="0.1.0",
               description="Read-only cyber-physical incident reconstruction and fleet exposure analysis")
@@ -186,6 +186,11 @@ def reconstruction_demo():
 @app.get("/api/reconstruction/live-demo")
 def reconstruction_live_demo(step: int = 0):
     return live_reconstruction_report(step)
+
+
+@app.get("/api/reconstruction/learning")
+def reconstruction_learning():
+    return demo_learning_report()
 
 
 @app.get("/api/incidents", response_model=list[IncidentSummary])

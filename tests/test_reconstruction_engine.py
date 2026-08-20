@@ -1,6 +1,6 @@
 from datetime import datetime, timedelta, timezone
 
-from app.reconstruction import CoverageState, ReconstructionEngine, synthetic_operational_world
+from app.reconstruction import CoverageState, ReconstructionEngine, demo_learning_report, synthetic_operational_world
 from app.reconstruction import live_reconstruction_report
 
 
@@ -119,3 +119,33 @@ def test_live_demo_generates_historical_learning_after_outcome():
     assert learning["similar_contexts"] == 18
     assert learning["outcomes"][0]["previous_action"] == "Continue investigation"
     assert "not a recommendation" in learning["note"].lower()
+
+
+def test_builds_operational_episode_with_outcome_as_first_class_object():
+    episode = engine().build_episode("crane-07", DECISION_TIME, KNOWLEDGE_TIME)
+    assert episode.context_signature.firmware == "4.9"
+    assert episode.context_signature.configuration == "C17"
+    assert episode.machine_state.fields["software"].value == "4.9"
+    assert "observed" in episode.knowledge_state
+    assert episode.interventions[0].action == "network looked unstable"
+    assert episode.outcome.result == "no recurrence after limited test"
+
+
+def test_learning_report_is_structured_from_similar_episodes():
+    report = demo_learning_report()
+    learning = report["learning"]
+    assert learning["similar_contexts"] == 18
+    assert len(learning["similar_episodes"]) == 18
+    assert {row["previous_action"] for row in learning["outcomes"]} == {
+        "Continue investigation", "Rollback", "Field inspection"
+    }
+    assert "not a recommendation" in learning["limitation"].lower()
+
+
+def test_context_graph_uses_review_relations_not_causality():
+    graph = demo_learning_report()["graph"]
+    relations = {edge["relation"] for edge in graph["edges"]}
+    assert "decision_based_on" in relations
+    assert "outcome_observed_after" in relations
+    assert "caused_by" not in relations
+    assert graph["limitation"].endswith("They do not establish causality.")

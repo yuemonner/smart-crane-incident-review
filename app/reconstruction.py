@@ -92,6 +92,94 @@ class PeerContextResult(BaseModel):
     matches: list[PeerMatch]
 
 
+class ContextSignature(BaseModel):
+    id: str
+    firmware: str | None
+    configuration: str | None
+    precursor_signal: str | None
+    alarm: str | None
+    missing_fields: list[str] = Field(default_factory=list)
+    evidence_ids: list[str] = Field(default_factory=list)
+
+
+class InterventionRecord(BaseModel):
+    id: str
+    actor: str | None
+    action: str
+    reason: str | None
+    recorded_at: datetime
+    evidence_ids: list[str] = Field(default_factory=list)
+
+
+class OutcomeRecord(BaseModel):
+    id: str
+    recorded_at: datetime
+    result: str
+    recurrence: bool
+    time_to_resolution_hours: float | None = None
+    evidence_ids: list[str] = Field(default_factory=list)
+
+
+class OperationalEpisode(BaseModel):
+    id: str
+    asset_id: str
+    decision_time: datetime
+    decision: str
+    context_signature: ContextSignature
+    machine_state: TemporalState
+    knowledge_state: dict[str, list[str]]
+    interventions: list[InterventionRecord]
+    outcome: OutcomeRecord | None = None
+    evidence_ids: list[str] = Field(default_factory=list)
+
+
+class SimilarEpisode(BaseModel):
+    episode_id: str
+    asset_id: str
+    similarity_score: int
+    previous_action: str
+    outcome: str
+    recurrence: bool
+    caveat: str
+
+
+class HistoricalOutcomeSummary(BaseModel):
+    previous_action: str
+    cases: int
+    outcome: str
+
+
+class LearningReport(BaseModel):
+    target_episode_id: str
+    context_signature: ContextSignature
+    similar_contexts: int
+    similar_episodes: list[SimilarEpisode]
+    outcomes: list[HistoricalOutcomeSummary]
+    evidence_to_capture_next: list[str]
+    limitation: str = "Historical outcomes are retrieval context, not a recommendation."
+
+
+class GraphNode(BaseModel):
+    id: str
+    label: str
+    type: str
+    properties: dict[str, Any] = Field(default_factory=dict)
+
+
+class GraphEdge(BaseModel):
+    source: str
+    target: str
+    relation: str
+    evidence_ids: list[str] = Field(default_factory=list)
+
+
+class OperationalContextGraph(BaseModel):
+    episode_id: str
+    nodes: list[GraphNode]
+    edges: list[GraphEdge]
+    limitation: str = "Graph relations preserve sequence, association and review basis. They do not establish causality."
+
+
 STATE_SUBJECTS = {
     "firmware": ("software", "Software or firmware version at the review time."),
     "config": ("configuration", "Configuration profile at the review time."),
@@ -263,6 +351,177 @@ class ReconstructionEngine:
             matches=matches,
         )
 
+    def build_episode(
+        self,
+        asset_id: str,
+        decision_time: datetime,
+        knowledge_time: datetime | None = None,
+        decision: str = "Hold deployment",
+    ) -> OperationalEpisode:
+        knowledge_time = knowledge_time or decision_time
+        state = self.state_at(asset_id, decision_time, knowledge_time)
+        known = [
+            e for e in self.evidence
+            if e.asset_id in (asset_id, None)
+            and e.event_time <= decision_time
+            and e.ingested_at <= knowledge_time
+        ]
+        evidence_state = _classified_evidence(known, decision_time, knowledge_time)
+        signature = self.context_signature(asset_id, decision_time, knowledge_time)
+        interventions = [
+            InterventionRecord(
+                id=e.id,
+                actor=e.provenance.get("actor"),
+                action=e.after or e.event_type,
+                reason=e.provenance.get("reason"),
+                recorded_at=e.observed_at,
+                evidence_ids=[e.id],
+            )
+            for e in known
+            if e.subject in {"intervention", "hypothesis"} or e.event_type in {"intervention", "note"}
+        ]
+        outcome_event = max(
+            (
+                e for e in self.evidence
+                if e.asset_id == asset_id
+                and e.subject == "outcome"
+                and e.ingested_at <= knowledge_time + timedelta(days=14)
+            ),
+            key=lambda e: e.event_time,
+            default=None,
+        )
+        outcome = None
+        if outcome_event:
+            outcome = OutcomeRecord(
+                id=outcome_event.id,
+                recorded_at=outcome_event.event_time,
+                result=outcome_event.after or "outcome recorded",
+                recurrence="recurrence" in (outcome_event.after or "").lower(),
+                time_to_resolution_hours=round((outcome_event.event_time - decision_time).total_seconds() / 3600, 2),
+                evidence_ids=[outcome_event.id],
+            )
+        return OperationalEpisode(
+            id=f"episode-{asset_id}-{decision_time.strftime('%Y%m%d%H%M')}",
+            asset_id=asset_id,
+            decision_time=decision_time,
+            decision=decision,
+            context_signature=signature,
+            machine_state=state,
+            knowledge_state=evidence_state,
+            interventions=interventions,
+            outcome=outcome,
+            evidence_ids=[e.id for e in known],
+        )
+
+    def context_signature(
+        self,
+        asset_id: str,
+        decision_time: datetime,
+        knowledge_time: datetime | None = None,
+    ) -> ContextSignature:
+        state = self.state_at(asset_id, decision_time, knowledge_time)
+        firmware = state.fields["software"].value
+        config = state.fields["configuration"].value
+        telemetry = max(
+            (
+                e for e in self.evidence
+                if e.asset_id == asset_id
+                and e.subject == "telemetry"
+                and e.event_time <= decision_time
+                and e.ingested_at <= (knowledge_time or decision_time)
+            ),
+            key=lambda e: e.event_time,
+            default=None,
+        )
+        alarm = max(
+            (
+                e for e in self.evidence
+                if e.asset_id == asset_id
+                and e.subject == "alarm"
+                and e.event_time <= decision_time
+                and e.ingested_at <= (knowledge_time or decision_time)
+            ),
+            key=lambda e: e.event_time,
+            default=None,
+        )
+        missing = [
+            item.field for item in self.analyze_reconstructability(asset_id, decision_time, knowledge_time).coverage
+            if item.state == CoverageState.missing
+        ]
+        evidence_ids = []
+        for field in ("software", "configuration"):
+            evidence_ids.extend(state.fields[field].evidence_ids)
+        if telemetry:
+            evidence_ids.append(telemetry.id)
+        if alarm:
+            evidence_ids.append(alarm.id)
+        return ContextSignature(
+            id=f"sig:{firmware or 'unknown'}:{config or 'unknown'}:{telemetry.after if telemetry else 'no-telemetry'}:{alarm.after if alarm else 'no-alarm'}",
+            firmware=firmware,
+            configuration=config,
+            precursor_signal=telemetry.after if telemetry else None,
+            alarm=alarm.after if alarm else None,
+            missing_fields=missing,
+            evidence_ids=evidence_ids,
+        )
+
+    def learning_report(self, episode: OperationalEpisode) -> LearningReport:
+        similar = _synthetic_similar_episodes(episode.context_signature)
+        outcomes_by_action: dict[str, list[SimilarEpisode]] = {}
+        for item in similar:
+            outcomes_by_action.setdefault(item.previous_action, []).append(item)
+        summaries = [
+            HistoricalOutcomeSummary(
+                previous_action=action,
+                cases=len(items),
+                outcome=_summarize_outcomes(items),
+            )
+            for action, items in outcomes_by_action.items()
+        ]
+        return LearningReport(
+            target_episode_id=episode.id,
+            context_signature=episode.context_signature,
+            similar_contexts=len(similar),
+            similar_episodes=similar,
+            outcomes=summaries,
+            evidence_to_capture_next=[
+                "5-minute local controller trace around critical triggers",
+                "manual intervention actor, reason and exact parameter delta",
+                "configuration diff attached to each activated profile",
+                "outcome follow-up linked to the original decision episode",
+            ],
+        )
+
+    def context_graph(self, episode: OperationalEpisode) -> OperationalContextGraph:
+        nodes = [
+            GraphNode(id=episode.asset_id, label=episode.asset_id, type="machine"),
+            GraphNode(id=episode.context_signature.id, label="Context signature", type="context_signature",
+                      properties=episode.context_signature.model_dump(mode="json")),
+            GraphNode(id=episode.id, label="Operational episode", type="episode"),
+            GraphNode(id=f"{episode.id}:decision", label=episode.decision, type="human_decision"),
+        ]
+        edges = [
+            GraphEdge(source=episode.asset_id, target=episode.context_signature.id,
+                      relation="had_state_signature", evidence_ids=episode.context_signature.evidence_ids),
+            GraphEdge(source=episode.context_signature.id, target=episode.id,
+                      relation="reviewed_during", evidence_ids=episode.evidence_ids),
+            GraphEdge(source=episode.id, target=f"{episode.id}:decision",
+                      relation="decision_based_on", evidence_ids=episode.evidence_ids),
+        ]
+        for intervention in episode.interventions:
+            nodes.append(GraphNode(id=intervention.id, label=intervention.action, type="intervention",
+                                   properties=intervention.model_dump(mode="json")))
+            edges.append(GraphEdge(source=intervention.id, target=episode.id,
+                                   relation="human_context_recorded_during",
+                                   evidence_ids=intervention.evidence_ids))
+        if episode.outcome:
+            nodes.append(GraphNode(id=episode.outcome.id, label=episode.outcome.result, type="outcome",
+                                   properties=episode.outcome.model_dump(mode="json")))
+            edges.append(GraphEdge(source=f"{episode.id}:decision", target=episode.outcome.id,
+                                   relation="outcome_observed_after",
+                                   evidence_ids=episode.outcome.evidence_ids))
+        return OperationalContextGraph(episode_id=episode.id, nodes=nodes, edges=edges)
+
     def _ids(self, asset_id: str, subject: str, before: datetime) -> list[str]:
         return [
             e.id for e in self.evidence
@@ -345,6 +604,21 @@ def demo_reconstruction_report() -> dict[str, Any]:
     }
 
 
+def demo_learning_report() -> dict[str, Any]:
+    world = synthetic_operational_world()
+    engine = ReconstructionEngine(world)
+    decision_time = datetime(2026, 8, 14, 15, 32, tzinfo=timezone.utc)
+    knowledge_time = datetime(2026, 8, 14, 16, 5, tzinfo=timezone.utc)
+    episode = engine.build_episode("crane-07", decision_time, knowledge_time)
+    learning = engine.learning_report(episode)
+    graph = engine.context_graph(episode)
+    return {
+        "episode": episode.model_dump(mode="json"),
+        "learning": learning.model_dump(mode="json"),
+        "graph": graph.model_dump(mode="json"),
+    }
+
+
 LIVE_REVIEW_DECISION_TIME = datetime(2026, 8, 14, 16, 5, tzinfo=timezone.utc)
 
 
@@ -380,6 +654,8 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
     evidence_state = _classified_evidence(visible, incident_time, knowledge_time)
     interpretation = _bounded_interpretation(evidence_state, where_else)
     frozen_decision = _frozen_decision(visible, incident_time, knowledge_time) if step >= 8 else None
+    episode = engine.build_episode("crane-07", incident_time, knowledge_time) if step >= 8 else None
+    learning = _historical_learning_from_report(engine.learning_report(episode)) if step >= 11 and episode else _historical_learning_pending()
     new_evidence_notice = None
     if step == 9:
         new_evidence_notice = {
@@ -428,7 +704,7 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
             "recorded": frozen_decision,
         },
         "new_evidence_notice": new_evidence_notice,
-        "historical_learning": _historical_learning(step),
+        "historical_learning": learning,
     }
 
 
@@ -570,23 +846,65 @@ def _frozen_decision(records: list[CanonicalEvidence], incident_time: datetime, 
     }
 
 
-def _historical_learning(step: int) -> dict[str, Any]:
-    if step < 11:
-        return {
-            "created": False,
-            "headline": "Historical learning not generated yet",
-            "note": "Outcome-linked history appears after new evidence and follow-up outcomes attach to the episode.",
-            "similar_contexts": 0,
-            "outcomes": [],
-        }
+def _historical_learning_pending() -> dict[str, Any]:
+    return {
+        "created": False,
+        "headline": "Historical learning not generated yet",
+        "note": "Outcome-linked history appears after new evidence and follow-up outcomes attach to the episode.",
+        "similar_contexts": 0,
+        "outcomes": [],
+    }
+
+
+def _historical_learning_from_report(report: LearningReport) -> dict[str, Any]:
     return {
         "created": True,
         "headline": "Every decision makes the next review less cold-start",
-        "similar_contexts": 18,
-        "note": "Historical outcomes, not a recommendation. Veyra shows what happened in similar reviewed contexts.",
-        "outcomes": [
-            {"previous_action": "Continue investigation", "cases": 8, "outcome": "6 isolated config issue"},
-            {"previous_action": "Rollback", "cases": 5, "outcome": "2 resolved"},
-            {"previous_action": "Field inspection", "cases": 5, "outcome": "4 hardware-related"},
-        ],
+        "similar_contexts": report.similar_contexts,
+        "note": report.limitation,
+        "outcomes": [item.model_dump(mode="json") for item in report.outcomes],
     }
+
+
+def _synthetic_similar_episodes(signature: ContextSignature) -> list[SimilarEpisode]:
+    rows = [
+        ("episode-crane-11-202607031430", "crane-11", 4, "Continue investigation", "isolated config issue", False, "same firmware/config and precursor; no peer failure"),
+        ("episode-crane-14-202607091120", "crane-14", 4, "Continue investigation", "isolated config issue", False, "same precursor, lower load envelope"),
+        ("episode-crane-18-202607181620", "crane-18", 4, "Continue investigation", "isolated config issue", False, "same config activation path"),
+        ("episode-crane-22-202607221010", "crane-22", 3, "Continue investigation", "isolated config issue", False, "same firmware/config, no E-stop"),
+        ("episode-crane-27-202607291705", "crane-27", 3, "Continue investigation", "isolated config issue", False, "same precursor signal, different operator context"),
+        ("episode-crane-31-202608021330", "crane-31", 3, "Continue investigation", "maintenance note corrected telemetry interpretation", False, "human assertion later contradicted by telemetry"),
+        ("episode-crane-33-202608041440", "crane-33", 3, "Continue investigation", "no recurrence after limited test", False, "same missing local controller state"),
+        ("episode-crane-34-202608060915", "crane-34", 3, "Continue investigation", "no recurrence after limited test", False, "same evidence gaps"),
+        ("episode-crane-09-202607111015", "crane-09", 4, "Rollback", "resolved after rollback", False, "same firmware/config and repeated peer signal"),
+        ("episode-crane-12-202607151515", "crane-12", 4, "Rollback", "resolved after rollback", False, "matching peer failure present"),
+        ("episode-crane-16-202607261005", "crane-16", 3, "Rollback", "no clear improvement", True, "same change window, missing intervention reason"),
+        ("episode-crane-19-202607301220", "crane-19", 3, "Rollback", "no clear improvement", True, "counterexamples existed before rollback"),
+        ("episode-crane-21-202608031250", "crane-21", 3, "Rollback", "resolved after config revert", False, "config diff was available"),
+        ("episode-crane-24-202607071155", "crane-24", 3, "Field inspection", "hardware-related", False, "same alarm, different firmware"),
+        ("episode-crane-25-202607171350", "crane-25", 3, "Field inspection", "hardware-related", False, "load envelope exceeded prior validated range"),
+        ("episode-crane-28-202607281040", "crane-28", 3, "Field inspection", "hardware-related", False, "operator reported mechanical drag"),
+        ("episode-crane-30-202608011625", "crane-30", 3, "Field inspection", "hardware-related", False, "inspection found drive assembly wear"),
+        ("episode-crane-32-202608050845", "crane-32", 2, "Field inspection", "no defect found", False, "weaker context match"),
+    ]
+    return [
+        SimilarEpisode(
+            episode_id=episode_id,
+            asset_id=asset_id,
+            similarity_score=score,
+            previous_action=action,
+            outcome=outcome,
+            recurrence=recurrence,
+            caveat=caveat,
+        )
+        for episode_id, asset_id, score, action, outcome, recurrence, caveat in rows
+        if score >= 2 and (signature.firmware or signature.configuration)
+    ]
+
+
+def _summarize_outcomes(items: list[SimilarEpisode]) -> str:
+    counts: dict[str, int] = {}
+    for item in items:
+        counts[item.outcome] = counts.get(item.outcome, 0) + 1
+    outcome, count = max(counts.items(), key=lambda kv: kv[1])
+    return f"{count} {outcome}"
