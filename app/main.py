@@ -20,6 +20,7 @@ from .memory import IncidentMemory
 from .cosmos import CosmosTelemetryReadOnlyConnector
 from .ledger import EvidenceLedger
 from .capture import RuntimeCapture, TraceSample
+from .reconstruction import demo_reconstruction_report
 
 app = FastAPI(title="ACECO Smart Crane Incident API", version="0.1.0",
               description="Read-only cyber-physical incident reconstruction and fleet exposure analysis")
@@ -175,6 +176,11 @@ def demo():
     investigation = service.investigate(IncidentRequest(entity_id="Crane-07", incident_time=INCIDENT_TIME,
                                                          evidence_mode=EvidenceMode.demo))
     return {"investigation": investigation, "where_else": service.where_else(investigation)}
+
+
+@app.get("/api/reconstruction/demo")
+def reconstruction_demo():
+    return demo_reconstruction_report()
 
 
 @app.get("/api/incidents", response_model=list[IncidentSummary])

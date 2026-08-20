@@ -37,6 +37,39 @@ The ledger detects application-level mutation; it is not hardware-backed immutab
 
 When a human decision is recorded, the application also freezes the observed facts, supported assessment, assumptions, unknowns, and evidence IDs available at that time. Later evidence can change the current conclusion without rewriting that historical decision context.
 
+## Reconstruction Engine V0
+
+The backend now includes a portable reconstruction core that does not depend on ACECO private data or any single ICP.
+
+It proves five reusable capabilities:
+
+1. **Canonical evidence schema** — normalizes records into `event_time`, `observed_at`, `ingested_at`, `assertion_type`, provenance, subject, before and after.
+2. **Temporal state reconstruction** — answers what could be proven about an asset at a decision time without using evidence that arrived later.
+3. **Change detection** — returns what changed in the lookback window with source, timestamp and evidence strength, without claiming cause.
+4. **Reconstructability analysis** — marks fields as `COMPLETE`, `PARTIAL` or `MISSING` and recommends minimum future capture.
+5. **Peer context matching** — finds assets with the same firmware/config signature, matching precursor signals and counterexamples.
+
+The synthetic world creates 50 cranes with mixed firmware, configuration, telemetry, human assertions, late-arriving counterevidence and missing intervention context. It exists to test reconstruction logic before connecting proprietary customer systems.
+
+Run the portable backend report:
+
+```powershell
+curl http://127.0.0.1:8010/api/reconstruction/demo
+```
+
+The eval suite checks that the engine:
+
+- reconstructs firmware/configuration at incident time;
+- does not use evidence discovered after the decision time;
+- distinguishes observed evidence from human assertion;
+- detects missing intervention reason;
+- produces before/after config diff;
+- finds exposed peer assets;
+- includes counterexamples;
+- avoids promoting correlation to causation;
+- preserves a superseded hypothesis as historical knowledge state;
+- generates minimum capture recommendations.
+
 ## Run the instant demo
 
 Requires Python 3.11+.
@@ -90,6 +123,7 @@ Human-recorded owner, checkpoint, and explicit decision fields are stored in `wo
 - `GET /api/fleet/identity` returns the last live REST identity mapping for cranes, customers, and sites.
 - `PUT /api/memory/incidents/{id}` saves a local human decision record.
 - `GET /api/demo` returns the complete zero-configuration demo.
+- `GET /api/reconstruction/demo` returns the portable Reconstruction Engine V0 report.
 - `GET /api/health` reports local service status.
 - `GET /api/sources` reports ADO, ACECO source-contract, and fleet-telemetry connection truthfully.
 - `POST /api/sources/ado/refresh` ingests current ADO evidence into the normalized evidence store.
