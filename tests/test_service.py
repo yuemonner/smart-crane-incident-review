@@ -22,7 +22,7 @@ def test_signature_is_traceable_to_evidence():
     _, result = analysis()
     assert result.signature.firmware == "4.9"
     assert result.signature.config_profile == "C17"
-    assert "notification_persistence_latency" in result.signature.precursor_pattern
+    assert "email_text_alert_delivery_latency" in result.signature.precursor_pattern
     assert result.signature.derived_from_evidence_ids
 
 

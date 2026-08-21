@@ -47,7 +47,7 @@ It proves five reusable capabilities:
 2. **Temporal state reconstruction** — answers what could be proven about an asset at a decision time without using evidence that arrived later.
 3. **Change detection** — returns what changed in the lookback window with source, timestamp and evidence strength, without claiming cause.
 4. **Reconstructability analysis** — marks fields as `COMPLETE`, `PARTIAL` or `MISSING` and recommends minimum future capture.
-5. **Peer context matching** — finds assets with the same firmware/config signature, matching precursor signals and counterexamples.
+5. **Peer context matching** — finds assets with the same monitoring firmware / alert config signature, matching precursor signals and counterexamples.
 
 It also introduces three backend primitives for the operational learning layer:
 
@@ -87,7 +87,7 @@ machine change
 → reconstructability gap check
 → frozen human decision
 → late evidence updates the current conclusion without rewriting the historical decision context
-→ peer failure changes the current fleet view while the 16:05 decision remains frozen
+→ peer alert-delivery issue changes the current fleet view while the 16:05 decision remains frozen
 → historical outcome comparison shows what similar reviewed contexts produced
 ```
 

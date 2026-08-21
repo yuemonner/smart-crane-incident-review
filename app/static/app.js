@@ -75,11 +75,11 @@ function renderKnowledgeState(i,w){
   setList('ksObserved',[
     alarm?`${alarm.title} occurred during operation`:'Alarm evidence is not present',
     deployment?`${deployment.attributes?.firmware||'software'} active in the review window`:'Active software revision is not established',
-    i.status.confirmed.find(x=>x.includes('notification'))||'Notification acknowledgement status requires review',
+    i.status.confirmed.find(x=>x.includes('alert'))||'Email/text alert acknowledgement status requires review',
   ]);
   setList('ksSuspected',[
-    'retry-handling or notification change may be related',
-    'configuration C17 may be part of the exposure surface',
+    'alert delivery retry-handling or monitoring config change may be related',
+    'alert routing config C17 may be part of the exposure surface',
   ]);
   setList('ksUnknown',[
     ...i.status.not_established,
@@ -102,7 +102,7 @@ function renderReconstructability(i,w){
   ]);
   setList('notReconstructable',[
     'operator override reason',
-    'machine state immediately before E-stop',
+    'machine and alert-delivery state immediately around E-stop',
     'exact config diff across every affected module',
     'intervention start/end boundaries',
     'local state during connectivity loss',

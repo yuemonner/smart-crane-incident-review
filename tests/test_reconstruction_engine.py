@@ -83,7 +83,7 @@ def test_generates_minimum_capture_recommendations():
 def test_live_demo_creates_review_after_machine_change():
     report = live_reconstruction_report(5)
     assert report["new_review"]["created"] is True
-    assert report["machine_change_detected"]["firmware"] == "4.8 -> 4.9"
+    assert report["machine_change_detected"]["firmware"] == "monitoring device firmware 4.8 -> 4.9"
     assert "observed" in report["evidence_state"]
     assert "AI explains evidence" in report["ai_reasoning_layer"]["limitation"]
 
@@ -106,10 +106,10 @@ def test_live_demo_where_else_includes_counterexamples():
 
 def test_live_demo_peer_failure_updates_current_view_without_rewriting_decision():
     report = live_reconstruction_report(10)
-    assert report["active_event"]["title"] == "Crane-08 reports the same failure"
+    assert report["active_event"]["title"] == "Crane-08 reports the same alert-delivery issue"
     assert report["where_else"]["matching_failure_count"] == 1
     assert report["team_decision"]["recorded"]["decision"] == "Hold deployment"
-    assert "before the Crane-08 failure" in report["new_evidence_notice"]["historical_context"]
+    assert "before the Crane-08 alert-delivery issue" in report["new_evidence_notice"]["historical_context"]
 
 
 def test_live_demo_generates_historical_learning_after_outcome():

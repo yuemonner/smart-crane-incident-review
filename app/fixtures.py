@@ -20,40 +20,40 @@ def demo_events() -> list[EvidenceEvent]:
                 "config_profile": "C16", "runtime_state": "3 successful operating cycles; no Redis exception storm",
                 "successful_test_cycles": 3, "validated_by": "Engineering"}),
         _event("ADO-COMMIT-a3f8e21", EvidenceType.commit, -50, None,
-               "Harden E-stop notification retry handling", "Azure DevOps",
+               "Harden email/text alert delivery retry handling", "Azure DevOps",
                {"commit": "a3f8e21", "repository": "smart-crane"}),
         _event("ADO-BUILD-1842", EvidenceType.build, -47, None, "Build 1842 succeeded",
                "Azure Pipelines", {"build": 1842, "commit": "a3f8e21", "result": "succeeded"}),
-        _event("ADO-TEST-1842", EvidenceType.test, -46, None, "Notification tests passed",
+        _event("ADO-TEST-1842", EvidenceType.test, -46, None, "Email/text alert delivery tests passed",
                "Azure Test Plans", {"passed": 128, "failed": 0, "gap": "No high-load latency test"}),
         _event("DEPLOY-4.9-C17", EvidenceType.deployment, -36, "Crane-07",
-               "Firmware 4.9 deployed", "Deployment manifest",
+               "Monitoring device firmware 4.9 deployed", "Deployment manifest",
                {"firmware": "4.9", "previous_firmware": "4.8", "config_profile": "C17", "build": 1842}),
         _event("CFG-07-C17", EvidenceType.config_change, -35.5, "Crane-07",
-               "Configuration profile C17 activated", "Config audit",
+               "Alert routing config C17 activated", "Config audit",
                {"config_profile": "C17", "previous": "C16"}),
         _event("IOT-07-LAT-1", EvidenceType.device_event, -4, "Crane-07",
-               "Elevated notification persistence latency", "IoT Hub",
-               {"pattern": "notification_persistence_latency", "value_ms": 1880, "load_pct": 84}),
+               "Elevated email/text alert delivery latency", "IoT Hub",
+               {"pattern": "email_text_alert_delivery_latency", "value_ms": 1880, "load_pct": 84}),
         _event("IOT-07-LAT-2", EvidenceType.device_event, -0.05, "Crane-07",
-               "Notification acknowledgement missing", "IoT Hub",
-               {"pattern": "notification_ack_missing", "load_pct": 87}),
+               "Alert acknowledgement missing", "IoT Hub",
+               {"pattern": "alert_ack_missing", "load_pct": 87}),
         _event("ALARM-07-ESTOP", EvidenceType.alarm, 0, "Crane-07",
-               "E-stop activated during hoisting", "IoT Hub",
-               {"alarm": "E_STOP", "load_pct": 87, "notification_delivered": False}),
+               "E-stop occurred; alert delivery under review", "IoT Hub",
+               {"alarm": "E_STOP", "load_pct": 87, "notification_delivered": False, "alert_delivered": False}),
     ]
 
-    # Exactly 27 peers share firmware/config exposure; exactly 11 show precursor signals.
+    # Exactly 27 peers share monitoring firmware / alert config exposure; exactly 11 show precursor signals.
     for i in range(1, 28):
         crane = f"Crane-{i + 7:02d}"
-        customer = ["North Harbor", "Baltic Lift", "Ardent Marine"][i % 3]
+        customer = ["Site group A", "Site group B", "Site group C"][i % 3]
         events.append(_event(f"INV-{crane}", EvidenceType.deployment, -30 - i / 10, crane,
                              "Fleet deployment inventory", "Deployment manifest",
                              {"firmware": "4.9", "config_profile": "C17", "customer": customer}))
         if i <= 11:
             events.append(_event(f"PRE-{crane}", EvidenceType.device_event, -i / 3, crane,
-                                 "Elevated notification persistence latency", "IoT Hub",
-                                 {"pattern": "notification_persistence_latency",
+                                 "Elevated email/text alert delivery latency", "IoT Hub",
+                                 {"pattern": "email_text_alert_delivery_latency",
                                   "value_ms": 1700 + i * 31, "load_pct": 76 + i,
                                   "customer": customer}))
 

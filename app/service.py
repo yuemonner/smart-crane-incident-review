@@ -33,12 +33,16 @@ class EvidenceService:
         changes = [e for e in timeline if e.type in CHANGE_TYPES]
         alarm_events = [e for e in timeline if e.type == EvidenceType.alarm]
         alarm = bool(alarm_events)
-        missing_delivery = any(e.attributes.get("notification_delivered") is False for e in timeline)
+        missing_delivery = any(
+            e.attributes.get("notification_delivered") is False
+            or e.attributes.get("alert_delivered") is False
+            for e in timeline
+        )
         status = KnowledgeStatus(
             confirmed=[x for x in [
                 f"An alarm was recorded: {alarm_events[-1].title}." if alarm else None,
-                "The E-stop notification was not recorded as delivered." if missing_delivery else None,
-                "Firmware 4.9 and configuration C17 were activated within the investigation window."
+                "The email/text alert for the E-stop was not recorded as delivered." if missing_delivery else None,
+                "Monitoring device firmware 4.9 and alert routing config C17 were activated within the investigation window."
                 if any(e.type == EvidenceType.deployment and e.attributes.get("firmware") == "4.9" for e in timeline) else None,
             ] if x],
             not_established=[
@@ -146,7 +150,7 @@ class EvidenceService:
                 continue
             precursor_events = [e for e in evidence if (e.attributes.get("pattern") in precursors or
                                 any(p in precursors for p in e.attributes.get("patterns", [])))]
-            factors = [f"firmware {signature.firmware}", f"config {signature.config_profile}"]
+            factors = [f"monitoring firmware {signature.firmware}", f"alert config {signature.config_profile}"]
             if precursor_events:
                 factors.append("precursor telemetry")
             score = 70 + min(29, 20 if precursor_events else 0 + len(precursor_events) * 3)
@@ -162,10 +166,10 @@ class EvidenceService:
             exposed_count=exposed, precursor_count=precursor,
             customer_count=len({m.customer for m in matches}), matches=matches,
             status=KnowledgeStatus(
-                confirmed=[f"{exposed} other assets share firmware/config exposure.",
+                confirmed=[f"{exposed} other assets share monitoring firmware / alert config exposure.",
                            f"{precursor} exposed assets show the selected precursor telemetry."],
                 not_established=["These assets will experience the same incident.",
                                  "Shared exposure proves a shared root cause."],
-                evidence_gaps=["No full matching failure is recorded on the matched peer assets.",
+                evidence_gaps=["No full matching alert-delivery issue is recorded on the matched peer assets.",
                                "Operational context is limited to the evidence sources connected for this mode."],
             ))
