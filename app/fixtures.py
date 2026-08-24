@@ -17,7 +17,7 @@ def demo_events() -> list[EvidenceEvent]:
         _event("LKG-07-REV217", EvidenceType.test, -60, "Crane-07",
                "Last known good validation completed", "Commissioning test record",
                {"last_known_good": True, "software_revision": "rev 217", "firmware": "4.8",
-                "config_profile": "C16", "runtime_state": "3 successful operating cycles; no Redis exception storm",
+                "config_profile": "C16", "runtime_state": "3 successful operating cycles; no repeated E-stop or alert-delivery exception",
                 "successful_test_cycles": 3, "validated_by": "Engineering"}),
         _event("ADO-COMMIT-a3f8e21", EvidenceType.commit, -50, None,
                "Harden email/text alert delivery retry handling", "Azure DevOps",
