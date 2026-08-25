@@ -89,8 +89,8 @@ def test_live_demo_creates_review_after_machine_change():
 
 
 def test_live_demo_preserves_historical_decision_after_late_evidence():
-    before = live_reconstruction_report(8)
-    after = live_reconstruction_report(9)
+    before = live_reconstruction_report(9)
+    after = live_reconstruction_report(10)
     assert before["team_decision"]["recorded"]["decision"] == "Hold deployment"
     assert after["team_decision"]["recorded"]["decision"] == "Hold deployment"
     assert after["new_evidence_notice"]["title"] == "New evidence changed the current conclusion"
@@ -105,7 +105,7 @@ def test_live_demo_where_else_includes_counterexamples():
 
 
 def test_live_demo_peer_failure_updates_current_view_without_rewriting_decision():
-    report = live_reconstruction_report(10)
+    report = live_reconstruction_report(11)
     assert report["active_event"]["title"] == "Crane-08 reports the same alert-delivery issue"
     assert report["where_else"]["matching_failure_count"] == 1
     assert report["team_decision"]["recorded"]["decision"] == "Hold deployment"
@@ -113,7 +113,7 @@ def test_live_demo_peer_failure_updates_current_view_without_rewriting_decision(
 
 
 def test_live_demo_generates_historical_learning_after_outcome():
-    report = live_reconstruction_report(11)
+    report = live_reconstruction_report(12)
     learning = report["historical_learning"]
     assert learning["created"] is True
     assert learning["similar_contexts"] == 18

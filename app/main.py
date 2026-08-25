@@ -22,8 +22,8 @@ from .ledger import EvidenceLedger
 from .capture import RuntimeCapture, TraceSample
 from .reconstruction import demo_learning_report, demo_reconstruction_report, live_reconstruction_report
 
-app = FastAPI(title="Smart Crane Incident API", version="0.1.0",
-              description="Read-only cyber-physical incident reconstruction and fleet exposure analysis")
+app = FastAPI(title="Smart Crane Machine Decision Review API", version="0.1.0",
+              description="Read-only machine decision review and fleet exposure analysis")
 service = EvidenceService(demo_events())
 catalog = SmartCraneSourceCatalog(settings.smart_crane_source_root)
 local_evidence = LocalSmartCraneEvidenceConnector(settings.smart_crane_notes_root)

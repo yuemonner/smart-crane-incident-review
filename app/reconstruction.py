@@ -644,7 +644,7 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
     reconstructability = engine.analyze_reconstructability("crane-07", incident_time, knowledge_time)
     peers = engine.match_peers("crane-07", incident_time)
     where_else = peers.model_dump(mode="json")
-    if step >= 10:
+    if step >= 11:
         where_else["matching_failure_count"] = 1
         where_else["matches"] = [
             {**match, "matching_failure": True}
@@ -653,18 +653,18 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
         ]
     evidence_state = _classified_evidence(visible, incident_time, knowledge_time)
     interpretation = _bounded_interpretation(evidence_state, where_else)
-    frozen_decision = _frozen_decision(visible, incident_time, knowledge_time) if step >= 8 else None
-    episode = engine.build_episode("crane-07", incident_time, knowledge_time) if step >= 8 else None
-    learning = _historical_learning_from_report(engine.learning_report(episode)) if step >= 11 and episode else _historical_learning_pending()
+    frozen_decision = _frozen_decision(visible, incident_time, knowledge_time) if step >= 9 else None
+    episode = engine.build_episode("crane-07", incident_time, knowledge_time) if step >= 9 else None
+    learning = _historical_learning_from_report(engine.learning_report(episode)) if step >= 12 and episode else _historical_learning_pending()
     new_evidence_notice = None
-    if step == 9:
+    if step == 10:
         new_evidence_notice = {
             "title": "New evidence changed the current conclusion",
             "message": "Late network telemetry shows cellular state was normal near the alert window. The current interpretation changes, but the 16:05 decision context remains frozen.",
             "current_conclusion": "Network-instability explanation is less supported than it appeared at the decision time.",
             "historical_context": "Decision at 16:05 was made before CR07-COUNTER-NETWORK was available.",
         }
-    if step >= 10:
+    if step >= 11:
         new_evidence_notice = {
             "title": "New peer alert-delivery issue changed the current conclusion",
             "message": "Crane-08 now reports the same alert-delivery issue under the same monitoring firmware / alert config exposure. Fleet-level concern is stronger, but the 16:05 decision context remains frozen.",
@@ -684,13 +684,13 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
             "firmware": "monitoring device firmware 4.8 -> 4.9",
             "configuration": "alert routing config C16 -> C17",
             "operator_context": "technician suspected network instability",
-            "telemetry": "email/text alert delivery latency increased after E-stop",
+            "telemetry": "email/text alert delivery latency increased before the E-stop trigger",
         },
         "new_review": {
             "created": step >= 3,
-            "title": "Crane-07 alert-delivery review",
+            "title": "Crane-07 machine decision review",
             "question": "Did the E-stop email/text alert delivery path behave as expected?",
-            "status": _readiness_status(evidence_state, reconstructability),
+            "status": _review_status(evidence_state, reconstructability),
         },
         "reconstruct_what_changed": [c.model_dump(mode="json") for c in changes],
         "state_at_decision": state_at_review.model_dump(mode="json"),
@@ -714,8 +714,9 @@ def _live_review_stream() -> list[dict[str, Any]]:
         (-36.2, "deployment", "Monitoring device firmware 4.9 deployed", "ADO pipeline + deployment manifest", "Monitoring software changed 36h before alert-delivery issue."),
         (-35.7, "configuration", "Alert routing config C17 activated", "Config audit", "Alert routing config changed 35.5h before alert-delivery issue."),
         (-34.2, "validation", "Email/text alert delivery tests passed; high-load latency test missing", "Azure Test Plans", "Validation exists, but one important stress case is absent."),
-        (-4.0, "telemetry", "Elevated email/text alert delivery latency", "Notehub + IoT Hub", "First matching telemetry signal appears before the missed acknowledgement."),
+        (-3.0, "telemetry", "Elevated email/text alert delivery latency", "Notehub + IoT Hub", "First matching telemetry signal appears before the missed acknowledgement."),
         (-0.05, "telemetry", "Alert acknowledgement missing", "IoT Hub", "Runtime signal matches the earlier alert-delivery latency pattern."),
+        (-0.01, "capture", "High-resolution event window captured", "Edge capture", "3-minute machine-state window preserves the local context around the trigger."),
         (0, "alarm", "E-stop occurred; alert delivery under review", "IoT Hub", "Critical trigger freezes an alert-delivery review context."),
         (0.03, "human_context", "Technician suspected network instability", "Service note", "Human assertion is preserved separately from observed evidence."),
         (0.55, "fleet_compare", "Peer comparison completed", "Veyra reconstruction engine", "27 peers share monitoring firmware / alert config exposure; 11 show the precursor signal."),
@@ -816,13 +817,13 @@ def _bounded_interpretation(evidence_state: dict[str, list[str]], peers: PeerCon
     }
 
 
-def _readiness_status(evidence_state: dict[str, list[str]], reconstructability: ReconstructabilityReport) -> str:
+def _review_status(evidence_state: dict[str, list[str]], reconstructability: ReconstructabilityReport) -> str:
     missing = [item for item in reconstructability.coverage if item.state == CoverageState.missing]
     if evidence_state["counterevidence"]:
-        return "READY WITH RESIDUAL RISK"
+        return "DECISION PENDING · COUNTEREVIDENCE PRESENT"
     if len(missing) >= 2:
-        return "NOT READY"
-    return "INSUFFICIENT EVIDENCE"
+        return "DECISION PENDING · EVIDENCE GAPS"
+    return "DECISION PENDING"
 
 
 def _frozen_decision(records: list[CanonicalEvidence], incident_time: datetime, knowledge_time: datetime) -> dict[str, Any]:
@@ -850,7 +851,7 @@ def _historical_learning_pending() -> dict[str, Any]:
     return {
         "created": False,
         "headline": "Historical learning not generated yet",
-        "note": "Outcome-linked history appears after new evidence and follow-up outcomes attach to the episode.",
+        "note": "Outcome-linked history appears after new evidence and follow-up outcomes attach to the review.",
         "similar_contexts": 0,
         "outcomes": [],
     }
