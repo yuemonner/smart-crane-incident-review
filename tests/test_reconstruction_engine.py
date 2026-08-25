@@ -4,8 +4,8 @@ from app.reconstruction import CoverageState, ReconstructionEngine, demo_learnin
 from app.reconstruction import live_reconstruction_report
 
 
-DECISION_TIME = datetime(2026, 8, 14, 15, 32, tzinfo=timezone.utc)
-KNOWLEDGE_TIME = datetime(2026, 8, 14, 16, 5, tzinfo=timezone.utc)
+DECISION_TIME = datetime(2026, 8, 14, 16, 32, tzinfo=timezone.utc)
+KNOWLEDGE_TIME = datetime(2026, 8, 14, 17, 5, tzinfo=timezone.utc)
 
 
 def engine():

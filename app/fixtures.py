@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 from .models import EvidenceEvent, EvidenceType
 
-INCIDENT_TIME = datetime(2026, 8, 14, 15, 32, tzinfo=timezone.utc)
+INCIDENT_TIME = datetime(2026, 8, 14, 16, 32, tzinfo=timezone.utc)
 
 
 def _event(id: str, type: EvidenceType, hours: float, entity: str | None, title: str,
@@ -30,26 +30,26 @@ def demo_events() -> list[EvidenceEvent]:
         _event("DEPLOY-4.9-C17", EvidenceType.deployment, -36, "Crane-07",
                "Monitoring device firmware 4.9 deployed", "Deployment manifest",
                {"firmware": "4.9", "previous_firmware": "4.8", "config_profile": "C17", "build": 1842,
-                "deployed_at": "2026-08-13 03:32 UTC", **crane_context}),
+                "deployed_at": "2026-08-13 04:32 UTC", **crane_context}),
         _event("CFG-07-C17", EvidenceType.config_change, -35.5, "Crane-07",
                "Alert routing config C17 activated", "Config audit",
-               {"config_profile": "C17", "previous": "C16", "activated_at": "2026-08-13 04:02 UTC", **crane_context}),
+               {"config_profile": "C17", "previous": "C16", "activated_at": "2026-08-13 05:02 UTC", **crane_context}),
         _event("IOT-07-LAT-1", EvidenceType.device_event, -3, "Crane-07",
                "Elevated email/text alert delivery latency", "IoT Hub",
                {"pattern": "email_text_alert_delivery_latency", "value_ms": 1880, "load_pct": 84,
-                "observed_at": "2026-08-14 12:32 UTC", **crane_context}),
+                "observed_at": "2026-08-14 13:32 UTC", **crane_context}),
         _event("IOT-07-LAT-2", EvidenceType.device_event, -0.05, "Crane-07",
                "Alert acknowledgement missing", "IoT Hub",
                {"pattern": "alert_ack_missing", "load_pct": 87, "latency_ms": 2210,
-                "observed_at": "2026-08-14 15:29 UTC", **crane_context}),
+                "observed_at": "2026-08-14 16:29 UTC", **crane_context}),
         _event("EDGE-07-HIRES", EvidenceType.device_event, -0.01, "Crane-07",
                "High-resolution event window captured", "Edge capture",
-               {"capture_window": "15:29-15:32 UTC", "duration_sec": 180, "sample_rate_hz": 50,
+               {"capture_window": "16:29-16:32 UTC", "duration_sec": 180, "sample_rate_hz": 50,
                 "signals": "machine state, load, motion, controller signals", "load_pct": 87, **crane_context}),
         _event("ALARM-07-ESTOP", EvidenceType.alarm, 0, "Crane-07",
                "E-stop event with alert-delivery behavior under review", "IoT Hub",
                {"alarm": "E_STOP", "load_pct": 87, "notification_delivered": False,
-                "alert_delivered": False, "trigger_time": "2026-08-14 15:32 UTC", **crane_context}),
+                "alert_delivered": False, "trigger_time": "2026-08-14 16:32 UTC", **crane_context}),
     ]
 
     # Exactly 27 peers share monitoring firmware / alert config exposure; exactly 11 show precursor signals.

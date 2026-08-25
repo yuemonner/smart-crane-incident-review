@@ -531,7 +531,7 @@ class ReconstructionEngine:
 
 def synthetic_operational_world(now: datetime | None = None) -> list[CanonicalEvidence]:
     now = now or datetime(2026, 8, 20, 10, 0, tzinfo=timezone.utc)
-    base = datetime(2026, 8, 14, 15, 32, tzinfo=timezone.utc)
+    base = datetime(2026, 8, 14, 16, 32, tzinfo=timezone.utc)
     records: list[CanonicalEvidence] = []
 
     def ev(
@@ -566,7 +566,7 @@ def synthetic_operational_world(now: datetime | None = None) -> list[CanonicalEv
             provenance=provenance,
         ))
 
-    ev("CR07-LKG-217", "crane-07", "test_plan", -60, "test", "last_known_good", after="2026-08-12T03:32Z")
+    ev("CR07-LKG-217", "crane-07", "test_plan", -60, "test", "last_known_good", after="2026-08-12T04:32Z")
     ev("CR07-FW-49", "crane-07", "deployment", -36, "deployment", "firmware", before="4.8", after="4.9")
     ev("CR07-CFG-C17", "crane-07", "configuration", -35.5, "config_change", "config", before="C16", after="C17")
     ev("CR07-TEST-PASS", "crane-07", "test_plan", -34, "test", "test", after="passed")
@@ -593,8 +593,8 @@ def synthetic_operational_world(now: datetime | None = None) -> list[CanonicalEv
 def demo_reconstruction_report() -> dict[str, Any]:
     world = synthetic_operational_world()
     engine = ReconstructionEngine(world)
-    decision_time = datetime(2026, 8, 14, 15, 32, tzinfo=timezone.utc)
-    knowledge_time = datetime(2026, 8, 14, 16, 5, tzinfo=timezone.utc)
+    decision_time = datetime(2026, 8, 14, 16, 32, tzinfo=timezone.utc)
+    knowledge_time = datetime(2026, 8, 14, 17, 5, tzinfo=timezone.utc)
     return {
         "state_at_decision": engine.state_at("crane-07", decision_time, knowledge_time).model_dump(mode="json"),
         "current_state": engine.state_at("crane-07", decision_time, decision_time + timedelta(hours=6)).model_dump(mode="json"),
@@ -607,8 +607,8 @@ def demo_reconstruction_report() -> dict[str, Any]:
 def demo_learning_report() -> dict[str, Any]:
     world = synthetic_operational_world()
     engine = ReconstructionEngine(world)
-    decision_time = datetime(2026, 8, 14, 15, 32, tzinfo=timezone.utc)
-    knowledge_time = datetime(2026, 8, 14, 16, 5, tzinfo=timezone.utc)
+    decision_time = datetime(2026, 8, 14, 16, 32, tzinfo=timezone.utc)
+    knowledge_time = datetime(2026, 8, 14, 17, 5, tzinfo=timezone.utc)
     episode = engine.build_episode("crane-07", decision_time, knowledge_time)
     learning = engine.learning_report(episode)
     graph = engine.context_graph(episode)
@@ -619,7 +619,7 @@ def demo_learning_report() -> dict[str, Any]:
     }
 
 
-LIVE_REVIEW_DECISION_TIME = datetime(2026, 8, 14, 16, 5, tzinfo=timezone.utc)
+LIVE_REVIEW_DECISION_TIME = datetime(2026, 8, 14, 17, 5, tzinfo=timezone.utc)
 
 
 def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
@@ -631,7 +631,7 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
     counterevidence without exposing proprietary customer records.
     """
     world = synthetic_operational_world()
-    incident_time = datetime(2026, 8, 14, 15, 32, tzinfo=timezone.utc)
+    incident_time = datetime(2026, 8, 14, 16, 32, tzinfo=timezone.utc)
     stream = _live_review_stream()
     max_step = len(stream) - 1
     step = max(0, min(step, max_step))
@@ -660,16 +660,16 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
     if step == 10:
         new_evidence_notice = {
             "title": "New evidence changed the current conclusion",
-            "message": "Late network telemetry shows cellular state was normal near the alert window. The current interpretation changes, but the 16:05 decision context remains frozen.",
+            "message": "Late network telemetry shows cellular state was normal near the alert window. The current interpretation changes, but the 17:05 decision context remains frozen.",
             "current_conclusion": "Network-instability explanation is less supported than it appeared at the decision time.",
-            "historical_context": "Decision at 16:05 was made before CR07-COUNTER-NETWORK was available.",
+            "historical_context": "Decision at 17:05 was made before CR07-COUNTER-NETWORK was available.",
         }
     if step >= 11:
         new_evidence_notice = {
             "title": "New peer alert-delivery issue changed the current conclusion",
-            "message": "Crane-08 now reports the same alert-delivery issue under the same monitoring firmware / alert config exposure. Fleet-level concern is stronger, but the 16:05 decision context remains frozen.",
+            "message": "Crane-08 now reports the same alert-delivery issue under the same monitoring firmware / alert config exposure. Fleet-level concern is stronger, but the 17:05 decision context remains frozen.",
             "current_conclusion": "Shared alert-delivery issue is now more supported and requires peer inspection.",
-            "historical_context": "Decision at 16:05 was made before the Crane-08 alert-delivery issue was available.",
+            "historical_context": "Decision at 17:05 was made before the Crane-08 alert-delivery issue was available.",
         }
     return {
         "step": step,
@@ -709,7 +709,7 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
 
 
 def _live_review_stream() -> list[dict[str, Any]]:
-    base = datetime(2026, 8, 14, 15, 32, tzinfo=timezone.utc)
+    base = datetime(2026, 8, 14, 16, 32, tzinfo=timezone.utc)
     rows = [
         (-36.2, "deployment", "Monitoring device firmware 4.9 deployed", "ADO pipeline + deployment manifest", "Monitoring software changed 36h before the alert-delivery review trigger."),
         (-35.7, "configuration", "Alert routing config C17 activated", "Config audit", "Alert routing config changed 35.5h before the alert-delivery review trigger."),
@@ -720,8 +720,8 @@ def _live_review_stream() -> list[dict[str, Any]]:
         (0, "alarm", "E-stop event with alert-delivery behavior under review", "IoT Hub", "Critical trigger freezes a machine decision review context."),
         (0.03, "human_context", "Technician suspected network instability", "Service note", "Human assertion is preserved separately from observed evidence."),
         (0.55, "fleet_compare", "Peer comparison completed", "Veyra reconstruction engine", "27 peers share monitoring firmware / alert config exposure; 11 show the precursor signal."),
-        (0.55, "decision", "Team decision recorded: hold deployment", "Review workspace", "Decision context is frozen with evidence available at 16:05."),
-        (2.5, "late_counterevidence", "Network telemetry arrived late: normal state near alert window", "Notehub + IoT Hub delayed retrieval", "Current conclusion updates without rewriting the 16:05 decision."),
+        (0.55, "decision", "Team decision recorded: hold deployment", "Review workspace", "Decision context is frozen with evidence available at 17:05."),
+        (2.5, "late_counterevidence", "Network telemetry arrived late: normal state near alert window", "Notehub + IoT Hub delayed retrieval", "Current conclusion updates without rewriting the 17:05 decision."),
         (3.2, "peer_failure", "Crane-08 reports the same alert-delivery issue", "IoT Hub + service review", "Matching alert-delivery issues update from 0 to 1 after the earlier decision."),
         (4.0, "outcome", "Historical outcome comparison generated", "Veyra operational memory", "Similar reviewed contexts become reusable learning for the next decision."),
     ]
