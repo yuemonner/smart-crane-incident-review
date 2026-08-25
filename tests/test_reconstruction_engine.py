@@ -85,7 +85,7 @@ def test_live_demo_creates_review_after_machine_change():
     assert report["new_review"]["created"] is True
     assert report["machine_change_detected"]["firmware"] == "monitoring device firmware 4.8 -> 4.9"
     assert "observed" in report["evidence_state"]
-    assert "AI explains evidence" in report["ai_reasoning_layer"]["limitation"]
+    assert "Evidence synthesis" in report["ai_reasoning_layer"]["limitation"]
 
 
 def test_live_demo_preserves_historical_decision_after_late_evidence():

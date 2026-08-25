@@ -33,20 +33,20 @@ async function loadLiveReview(){
   const notice=data.new_evidence_notice;$('liveNotice').hidden=!notice;$('liveNotice').innerHTML=notice?`<b>${esc(notice.title)}</b><p>${esc(notice.message)}</p><small>${esc(notice.historical_context)}</small>`:'';
   $('liveBoundary').textContent=data.data_boundary;
 }
-if($('livePlay')){$('livePlay').onclick=()=>{livePlaying=!livePlaying;$('livePlay').textContent=livePlaying?'Pause':'Play'};$('liveInject').onclick=()=>{livePlaying=false;$('livePlay').textContent='Play';liveStep=Math.max(liveStep,10);loadLiveReview()};$('liveRestart').onclick=()=>{liveStep=0;livePlaying=true;$('livePlay').textContent='Pause';loadLiveReview()};loadLiveReview().then(liveRun)}
+if($('livePlay')){$('livePlay').onclick=()=>{livePlaying=!livePlaying;$('livePlay').textContent=livePlaying?'Pause':'Play'};$('liveInject').onclick=()=>{livePlaying=false;$('livePlay').textContent='Play';liveStep=Math.max(liveStep,11);loadLiveReview()};$('liveRestart').onclick=()=>{liveStep=0;livePlaying=true;$('livePlay').textContent='Pause';loadLiveReview()};loadLiveReview().then(liveRun)}
 
 async function loadIncidents(){
   const ticket=++loadGeneration;
   const mode=$('evidenceMode').value;
   const list=await fetch(`/api/incidents?mode=${mode}`).then(r=>r.json());
   if(ticket!==loadGeneration)return;
-  $('incidentSelect').innerHTML=list.length?list.map(x=>`<option value="${esc(x.id)}" data-entity="${esc(x.entity_id)}" data-time="${esc(x.incident_time)}">${esc(x.entity_id)} · ${esc(x.title)} · ${new Date(x.incident_time).toLocaleString()}</option>`).join(''):'<option value="">No incidents in this evidence mode</option>';
+  $('incidentSelect').innerHTML=list.length?list.map(x=>`<option value="${esc(x.id)}" data-entity="${esc(x.entity_id)}" data-time="${esc(x.incident_time)}">${esc(x.entity_id)} · ${esc(x.title)} · ${new Date(x.incident_time).toLocaleString()}</option>`).join(''):'<option value="">No review triggers in this evidence mode</option>';
   setModeBanner(mode,list.length);
   if(list.length) await loadSelectedIncident(ticket); else clearWorkspace(mode);
 }
 function setModeBanner(mode,count){
   const copy={demo:['DEMO SCENARIO','Synthetic records only. No production evidence is shown.'],live:['LIVE EVIDENCE','Only live source records are shown.'],cached:['CACHED EVIDENCE','Saved source snapshot only; freshness is explicit.'],partial:['PARTIAL EVIDENCE','Incomplete source set only; gaps must be reviewed.']}[mode];
-  $('modeBanner').className=`mode-banner ${mode==='live'?'live-mode':mode}`;$('modeBanner').innerHTML=`<b>${copy[0]}</b><span>${copy[1]} · ${count} selectable incident${count===1?'':'s'}</span>`;
+  $('modeBanner').className=`mode-banner ${mode==='live'?'live-mode':mode}`;$('modeBanner').innerHTML=`<b>${copy[0]}</b><span>${copy[1]} · ${count} selectable review trigger${count===1?'':'s'}</span>`;
 }
 async function loadSelectedIncident(ticket=++loadGeneration){
   const option=$('incidentSelect').selectedOptions[0]; if(!option?.value)return;
@@ -60,8 +60,8 @@ async function loadSelectedIncident(ticket=++loadGeneration){
 function clearWorkspace(mode){
   currentIncident=null;['exposed','precursors','customers','ovExposed','ovSignals','reviewCount','gapCount'].forEach(id=>text(id,'—'));
   text('decisionStatusShort','PENDING');
-  if($('timeline'))$('timeline').innerHTML=`<div class="panel">No ${esc(mode)} incident evidence is currently loaded. Connect or refresh the relevant read-only source; synthetic evidence will not be substituted.</div>`;
-  if($('matches'))$('matches').innerHTML='';if($('customerExposure'))$('customerExposure').innerHTML='<p>No evidence loaded in this mode.</p>';if($('attentionState'))$('attentionState').textContent='NO EVIDENCE';if($('escalationTitle'))$('escalationTitle').textContent='Director-attention rules were not evaluated';if($('escalationReasons'))$('escalationReasons').innerHTML='<li>No incident evidence is loaded in this workspace.</li>';if($('confirmed'))$('confirmed').innerHTML='';if($('unknown'))$('unknown').innerHTML='';if($('gaps'))$('gaps').innerHTML='';if($('changes'))$('changes').innerHTML='';if($('provenanceLimits'))$('provenanceLimits').innerHTML='<li>No evidence loaded.</li>';if($('freshnessState'))$('freshnessState').textContent='NO EVIDENCE';if($('freshnessDetail'))$('freshnessDetail').textContent='Nothing from another mode is being mixed in.';
+  if($('timeline'))$('timeline').innerHTML=`<div class="panel">No ${esc(mode)} review evidence is currently loaded. Connect or refresh the relevant read-only source; synthetic evidence will not be substituted.</div>`;
+  if($('matches'))$('matches').innerHTML='';if($('customerExposure'))$('customerExposure').innerHTML='<p>No evidence loaded in this mode.</p>';if($('attentionState'))$('attentionState').textContent='NO EVIDENCE';if($('escalationTitle'))$('escalationTitle').textContent='Director-attention rules were not evaluated';if($('escalationReasons'))$('escalationReasons').innerHTML='<li>No review evidence is loaded in this workspace.</li>';if($('confirmed'))$('confirmed').innerHTML='';if($('unknown'))$('unknown').innerHTML='';if($('gaps'))$('gaps').innerHTML='';if($('changes'))$('changes').innerHTML='';if($('provenanceLimits'))$('provenanceLimits').innerHTML='<li>No evidence loaded.</li>';if($('freshnessState'))$('freshnessState').textContent='NO EVIDENCE';if($('freshnessDetail'))$('freshnessDetail').textContent='Nothing from another mode is being mixed in.';
   text('directorEscalation','Not evaluated');
   ['ksObserved','ksSuspected','ksUnknown','ksCounter','alreadyReconstructable','notReconstructable','captureNextTime'].forEach(id=>setList(id,[]));
   $('lkgState').textContent='NOT ESTABLISHED';$('lkgObserved').textContent=$('lkgSoftware').textContent=$('lkgConfig').textContent=$('lkgRuntime').textContent=$('lkgTests').textContent=$('lkgValidator').textContent='Not recorded';$('scopeState').textContent='NOT ESTABLISHED';$('scopeExplanation').textContent='No decision review evidence is loaded.';$('scopeDevice').textContent=$('scopeSignals').textContent=$('scopeIncidents').textContent='—';

@@ -711,13 +711,13 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
 def _live_review_stream() -> list[dict[str, Any]]:
     base = datetime(2026, 8, 14, 15, 32, tzinfo=timezone.utc)
     rows = [
-        (-36.2, "deployment", "Monitoring device firmware 4.9 deployed", "ADO pipeline + deployment manifest", "Monitoring software changed 36h before alert-delivery issue."),
-        (-35.7, "configuration", "Alert routing config C17 activated", "Config audit", "Alert routing config changed 35.5h before alert-delivery issue."),
+        (-36.2, "deployment", "Monitoring device firmware 4.9 deployed", "ADO pipeline + deployment manifest", "Monitoring software changed 36h before the alert-delivery review trigger."),
+        (-35.7, "configuration", "Alert routing config C17 activated", "Config audit", "Alert routing config changed 35.5h before the alert-delivery review trigger."),
         (-34.2, "validation", "Email/text alert delivery tests passed; high-load latency test missing", "Azure Test Plans", "Validation exists, but one important stress case is absent."),
         (-3.0, "telemetry", "Elevated email/text alert delivery latency", "Notehub + IoT Hub", "First matching telemetry signal appears before the missed acknowledgement."),
         (-0.05, "telemetry", "Alert acknowledgement missing", "IoT Hub", "Runtime signal matches the earlier alert-delivery latency pattern."),
         (-0.01, "capture", "High-resolution event window captured", "Edge capture", "3-minute machine-state window preserves the local context around the trigger."),
-        (0, "alarm", "E-stop occurred; alert delivery under review", "IoT Hub", "Critical trigger freezes an alert-delivery review context."),
+        (0, "alarm", "E-stop event with alert-delivery behavior under review", "IoT Hub", "Critical trigger freezes a machine decision review context."),
         (0.03, "human_context", "Technician suspected network instability", "Service note", "Human assertion is preserved separately from observed evidence."),
         (0.55, "fleet_compare", "Peer comparison completed", "Veyra reconstruction engine", "27 peers share monitoring firmware / alert config exposure; 11 show the precursor signal."),
         (0.55, "decision", "Team decision recorded: hold deployment", "Review workspace", "Decision context is frozen with evidence available at 16:05."),
@@ -813,7 +813,7 @@ def _bounded_interpretation(evidence_state: dict[str, list[str]], peers: PeerCon
             "configuration diff for C16 -> C17.",
             "follow-up test outcome linked to the original decision.",
         ],
-        "limitation": "AI explains evidence already reconstructed by the backend. It does not create facts or establish causality.",
+        "limitation": "Evidence synthesis uses facts already reconstructed by the backend. It does not create facts or establish causality.",
     }
 
 
