@@ -719,11 +719,11 @@ def _live_review_stream() -> list[dict[str, Any]]:
         (-0.01, "capture", "High-resolution event window captured", "Edge capture", "3-minute machine-state window preserves the local context around the trigger."),
         (0, "alarm", "E-stop event with alert-delivery behavior under review", "IoT Hub", "Critical trigger freezes a machine decision review context."),
         (0.03, "human_context", "Technician suspected network instability", "Service note", "Human assertion is preserved separately from observed evidence."),
-        (0.55, "fleet_compare", "Peer comparison completed", "Veyra reconstruction engine", "27 peers share monitoring firmware / alert config exposure; 11 show the precursor signal."),
+        (0.55, "fleet_compare", "Peer comparison completed", "reconstruction engine", "27 peers share monitoring firmware / alert config exposure; 11 show the precursor signal."),
         (0.55, "decision", "Team decision recorded: hold deployment", "Review workspace", "Decision context is frozen with evidence available at 17:05."),
         (2.5, "late_counterevidence", "Network telemetry arrived late: normal state near alert window", "Notehub + IoT Hub delayed retrieval", "Current conclusion updates without rewriting the 17:05 decision."),
         (3.2, "peer_failure", "Crane-08 reports the same alert-delivery issue", "IoT Hub + service review", "Matching alert-delivery issues update from 0 to 1 after the earlier decision."),
-        (4.0, "outcome", "Historical outcome comparison generated", "Veyra operational memory", "Similar reviewed contexts become reusable learning for the next decision."),
+        (4.0, "outcome", "Historical outcome comparison generated", "operational memory", "Similar reviewed contexts become reusable learning for the next decision."),
     ]
     return [
         {
