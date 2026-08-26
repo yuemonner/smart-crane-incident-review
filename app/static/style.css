@@ -15,5 +15,9 @@
 .decision-options button{border:1px solid #dce3df;border-radius:18px;padding:7px 10px;background:#fbfcfb;color:#15211d;font:inherit;cursor:pointer}
 .decision-options button:hover{border-color:#102a22;background:#f1f5f2}
 .condition-grid .partial b{color:#9a7527}
+.related-memory{border-color:#cbd8d1;background:#fbfdfb}
+.related-memory h3{font-size:18px;margin:2px 0 8px}
+.related-memory p{margin:0 0 8px;color:#52605b}
+.related-memory small{color:#68736e}
 @media(max-width:1100px){.incident-picker{grid-template-columns:1fr 1fr}}
 @media(max-width:900px){.incident-picker{grid-template-columns:1fr}}
