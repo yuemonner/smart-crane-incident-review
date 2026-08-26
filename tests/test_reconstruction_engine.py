@@ -83,7 +83,7 @@ def test_generates_minimum_capture_recommendations():
 def test_live_demo_creates_review_after_machine_change():
     report = live_reconstruction_report(5)
     assert report["new_review"]["created"] is True
-    assert report["machine_change_detected"]["firmware"] == "monitoring device firmware 4.8 -> 4.9"
+    assert report["machine_change_detected"]["firmware"] == "monitoring image 4.8 -> 4.9"
     assert "observed" in report["evidence_state"]
     assert "Evidence synthesis" in report["ai_reasoning_layer"]["limitation"]
 
@@ -91,8 +91,8 @@ def test_live_demo_creates_review_after_machine_change():
 def test_live_demo_preserves_historical_decision_after_late_evidence():
     before = live_reconstruction_report(9)
     after = live_reconstruction_report(10)
-    assert before["team_decision"]["recorded"]["decision"] == "Hold deployment"
-    assert after["team_decision"]["recorded"]["decision"] == "Hold deployment"
+    assert before["team_decision"]["recorded"]["decision"] == "Hold current rollout"
+    assert after["team_decision"]["recorded"]["decision"] == "Hold current rollout"
     assert after["new_evidence_notice"]["title"] == "New evidence changed the current conclusion"
     assert "before CR07-COUNTER-NETWORK" in after["new_evidence_notice"]["historical_context"]
 
@@ -108,7 +108,7 @@ def test_live_demo_peer_failure_updates_current_view_without_rewriting_decision(
     report = live_reconstruction_report(11)
     assert report["active_event"]["title"] == "Crane-08 reports the same alert-delivery issue"
     assert report["where_else"]["matching_failure_count"] == 1
-    assert report["team_decision"]["recorded"]["decision"] == "Hold deployment"
+    assert report["team_decision"]["recorded"]["decision"] == "Hold current rollout"
     assert "before the Crane-08 alert-delivery issue" in report["new_evidence_notice"]["historical_context"]
 
 
@@ -137,7 +137,7 @@ def test_learning_report_is_structured_from_similar_episodes():
     assert learning["similar_contexts"] == 18
     assert len(learning["similar_episodes"]) == 18
     assert {row["previous_action"] for row in learning["outcomes"]} == {
-        "Continue investigation", "Rollback", "Field inspection"
+        "Continue investigation", "Revert to prior profile", "Field inspection"
     }
     assert "not a recommendation" in learning["limitation"].lower()
 

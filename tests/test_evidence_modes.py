@@ -26,7 +26,7 @@ def test_evidence_modes_are_never_mixed():
 def test_incident_memory_is_durable(tmp_path):
     path = tmp_path / "incidents.sqlite3"
     record = IncidentRecord(id="I-1", entity_id="crane", title="Alarm",
-                            incident_time=NOW, owner="Engineer", decision="Rollback",
+                            incident_time=NOW, owner="Engineer", decision="Revert to prior profile",
                             outcome="Connectivity restored", knowledge_at_decision=KnowledgeSnapshot(
                                 captured_at=NOW, observed=["Device disconnected"],
                                 assumptions=["Deployment may be related"],
@@ -34,6 +34,6 @@ def test_incident_memory_is_durable(tmp_path):
                                 evidence_ids=["alarm-1"]))
     IncidentMemory(str(path)).put(record)
     loaded = IncidentMemory(str(path)).get("I-1")
-    assert loaded and loaded.owner == "Engineer" and loaded.decision == "Rollback"
+    assert loaded and loaded.owner == "Engineer" and loaded.decision == "Revert to prior profile"
     assert loaded.outcome == "Connectivity restored"
     assert loaded.knowledge_at_decision.observed == ["Device disconnected"]

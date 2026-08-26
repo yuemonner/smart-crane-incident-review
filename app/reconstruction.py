@@ -356,7 +356,7 @@ class ReconstructionEngine:
         asset_id: str,
         decision_time: datetime,
         knowledge_time: datetime | None = None,
-        decision: str = "Hold deployment",
+        decision: str = "Hold current rollout",
     ) -> OperationalEpisode:
         knowledge_time = knowledge_time or decision_time
         state = self.state_at(asset_id, decision_time, knowledge_time)
@@ -681,8 +681,8 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
         "event_stream": stream[:step + 1],
         "machine_change_detected": {
             "asset_id": "crane-07",
-            "firmware": "monitoring device firmware 4.8 -> 4.9",
-            "configuration": "alert routing config C16 -> C17",
+            "firmware": "monitoring image 4.8 -> 4.9",
+            "configuration": "alert logic / hoist profile C16 -> C17",
             "operator_context": "technician suspected network instability",
             "telemetry": "email/text alert delivery latency increased before the E-stop trigger",
         },
@@ -700,7 +700,7 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
         "where_else": where_else,
         "reconstructability": reconstructability.model_dump(mode="json"),
         "team_decision": {
-            "options": ["Continue investigation", "Hold deployment", "Roll back", "Inspect peer assets", "Return to service"],
+            "options": ["Continue investigation", "Hold current rollout", "Revert to prior profile", "Inspect peer assets", "Return to service"],
             "recorded": frozen_decision,
         },
         "new_evidence_notice": new_evidence_notice,
@@ -711,16 +711,16 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
 def _live_review_stream() -> list[dict[str, Any]]:
     base = datetime(2026, 8, 14, 16, 32, tzinfo=timezone.utc)
     rows = [
-        (-36.2, "deployment", "Monitoring device firmware 4.9 deployed", "ADO pipeline + deployment manifest", "Monitoring software changed 36h before the alert-delivery review trigger."),
-        (-35.7, "configuration", "Alert routing config C17 activated", "Config audit", "Alert routing config changed 35.5h before the alert-delivery review trigger."),
+        (-36.2, "deployment", "Monitoring image 4.9 activated", "build record + rollout manifest", "Monitoring image changed 36h before the alert-delivery review trigger."),
+        (-35.7, "configuration", "Alert logic / hoist profile C17 activated", "Profile audit", "Alert logic / hoist profile changed 35.5h before the alert-delivery review trigger."),
         (-34.2, "validation", "Email/text alert delivery tests passed; high-load latency test missing", "Azure Test Plans", "Validation exists, but one important stress case is absent."),
         (-3.0, "telemetry", "Elevated email/text alert delivery latency", "Notehub + IoT Hub", "First matching telemetry signal appears before the missed acknowledgement."),
         (-0.05, "telemetry", "Alert acknowledgement missing", "IoT Hub", "Runtime signal matches the earlier alert-delivery latency pattern."),
         (-0.01, "capture", "High-resolution event window captured", "Edge capture", "3-minute machine-state window preserves the local context around the trigger."),
         (0, "alarm", "E-stop event with alert-delivery behavior under review", "IoT Hub", "Critical trigger freezes a machine decision review context."),
         (0.03, "human_context", "Technician suspected network instability", "Service note", "Human assertion is preserved separately from observed evidence."),
-        (0.55, "fleet_compare", "Peer comparison completed", "reconstruction engine", "27 peers share monitoring firmware / alert config exposure; 11 show the precursor signal."),
-        (0.55, "decision", "Team decision recorded: hold deployment", "Review workspace", "Decision context is frozen with evidence available at 17:05."),
+        (0.55, "fleet_compare", "Peer comparison completed", "reconstruction engine", "27 peers share the same alert logic / hoist profile exposure; 11 show the precursor signal."),
+        (0.55, "decision", "Team decision recorded: hold current rollout", "Review workspace", "Decision context is frozen with evidence available at 17:05."),
         (2.5, "late_counterevidence", "Network telemetry arrived late: normal state near alert window", "Notehub + IoT Hub delayed retrieval", "Current conclusion updates without rewriting the 17:05 decision."),
         (3.2, "peer_failure", "Crane-08 reports the same alert-delivery issue", "IoT Hub + service review", "Matching alert-delivery issues update from 0 to 1 after the earlier decision."),
         (4.0, "outcome", "Historical outcome comparison generated", "operational memory", "Similar reviewed contexts become reusable learning for the next decision."),
@@ -745,14 +745,14 @@ def _classified_evidence(records: list[CanonicalEvidence], incident_time: dateti
     human_asserted = []
     inferred = []
     not_established = [
-        "monitoring firmware 4.9 caused the crane E-stop",
+        "monitoring image 4.9 caused the crane E-stop",
         "the same alert-delivery issue will affect every exposed crane",
         "operator override parameters were fully captured",
     ]
     if "CR07-FW-49" in ids:
-        observed.append("monitoring device firmware 4.9 deployed")
+        observed.append("monitoring image 4.9 activated")
     if "CR07-CFG-C17" in ids:
-        observed.append("alert routing config C17 activated")
+        observed.append("alert logic / hoist profile C17 activated")
     if "CR07-TEL-PRE" in ids:
         observed.append("email/text alert delivery latency increased")
     if "CR07-ALARM-ESTOP" in ids:
@@ -762,7 +762,7 @@ def _classified_evidence(records: list[CanonicalEvidence], incident_time: dateti
     if "CR07-HUMAN-NETWORK" in ids:
         human_asserted.append("technician suspected network instability")
     if {"CR07-FW-49", "CR07-CFG-C17", "CR07-TEL-PRE"} <= ids:
-        inferred.append("monitoring firmware / alert config change may be related to alert-delivery behavior")
+        inferred.append("alert logic / hoist profile change may be related to alert-delivery behavior")
     counterevidence = []
     if "CR07-COUNTER-NETWORK" in ids:
         counterevidence.append("network-instability hypothesis is contradicted by late telemetry")
@@ -790,15 +790,15 @@ def _bounded_interpretation(evidence_state: dict[str, list[str]], peers: PeerCon
         plausible = "plausible but not established"
     return {
         "current_interpretation": [
-            "The alert-delivery issue followed a monitoring firmware / alert config change.",
-            f"{exposed_count} peer assets share the same monitoring firmware / alert config exposure.",
+            "The alert-delivery issue followed a monitoring image / alert profile change.",
+            f"{exposed_count} peer assets share the same alert logic / hoist profile exposure.",
             f"{precursor_count} exposed peers show the same precursor signal.",
             f"{counterexample_count} exposed peers do not show the precursor signal.",
             f"{matching_failure_count} matching peer alert-delivery issue has been recorded.",
             f"A shared alert-delivery issue is {plausible}.",
         ],
         "why": [
-            "Deployment and configuration evidence precede the incident.",
+            "Monitoring-image and profile evidence precede the incident.",
             "The same email/text alert delivery pattern appears near the E-stop event.",
             "Peer comparison finds exposed machines with and without the precursor.",
         ],
@@ -810,7 +810,7 @@ def _bounded_interpretation(evidence_state: dict[str, list[str]], peers: PeerCon
         "what_would_reduce_uncertainty": [
             "5-minute local controller and alert-delivery trace around the E-stop.",
             "override actor, reason and exact parameter changes.",
-            "configuration diff for C16 -> C17.",
+            "profile diff for C16 -> C17.",
             "follow-up test outcome linked to the original decision.",
         ],
         "limitation": "Evidence synthesis uses facts already reconstructed by the backend. It does not create facts or establish causality.",
@@ -829,20 +829,20 @@ def _review_status(evidence_state: dict[str, list[str]], reconstructability: Rec
 def _frozen_decision(records: list[CanonicalEvidence], incident_time: datetime, knowledge_time: datetime) -> dict[str, Any]:
     known = [e for e in records if e.asset_id in ("crane-07", None) and e.ingested_at <= knowledge_time]
     return {
-        "decision": "Hold deployment",
+        "decision": "Hold current rollout",
         "decision_time": LIVE_REVIEW_DECISION_TIME.isoformat(),
         "evidence_available_count": len(known),
         "known": [
-            "monitoring firmware 4.9 and alert routing config C17 were active",
+            "monitoring image 4.9 and alert logic / hoist profile C17 were active",
             "E-stop and alert-delivery latency were observed",
             "peer exposure existed across the fleet",
         ],
         "unknown": [
             "operator override reason",
             "local controller state during connectivity loss",
-            "whether monitoring firmware/config affected alert delivery",
+            "whether monitoring image / profile changes affected alert delivery",
         ],
-        "reason_entered_by_team": "Hold deployment until peer exposure and missing controller-state evidence are reviewed.",
+        "reason_entered_by_team": "Hold current rollout until peer exposure and missing controller-state evidence are reviewed.",
         "historical_context_rule": "Later evidence can change the current conclusion, but it does not rewrite what was knowable at decision time.",
     }
 
@@ -869,20 +869,20 @@ def _historical_learning_from_report(report: LearningReport) -> dict[str, Any]:
 
 def _synthetic_similar_episodes(signature: ContextSignature) -> list[SimilarEpisode]:
     rows = [
-        ("episode-crane-11-202607031430", "crane-11", 4, "Continue investigation", "isolated alert config issue", False, "same monitoring firmware / alert config and precursor; no peer alert-delivery issue"),
+        ("episode-crane-11-202607031430", "crane-11", 4, "Continue investigation", "isolated alert-profile issue", False, "same alert logic / hoist profile and precursor; no peer alert-delivery issue"),
         ("episode-crane-14-202607091120", "crane-14", 4, "Continue investigation", "isolated config issue", False, "same precursor, lower load envelope"),
         ("episode-crane-18-202607181620", "crane-18", 4, "Continue investigation", "isolated config issue", False, "same config activation path"),
-        ("episode-crane-22-202607221010", "crane-22", 3, "Continue investigation", "isolated alert config issue", False, "same monitoring firmware / alert config, no alert-delivery issue"),
+        ("episode-crane-22-202607221010", "crane-22", 3, "Continue investigation", "isolated alert-profile issue", False, "same alert logic / hoist profile, no alert-delivery issue"),
         ("episode-crane-27-202607291705", "crane-27", 3, "Continue investigation", "isolated config issue", False, "same precursor signal, different operator context"),
         ("episode-crane-31-202608021330", "crane-31", 3, "Continue investigation", "maintenance note corrected telemetry interpretation", False, "human assertion later contradicted by telemetry"),
         ("episode-crane-33-202608041440", "crane-33", 3, "Continue investigation", "no recurrence after limited test", False, "same missing local controller state"),
         ("episode-crane-34-202608060915", "crane-34", 3, "Continue investigation", "no recurrence after limited test", False, "same evidence gaps"),
-        ("episode-crane-09-202607111015", "crane-09", 4, "Rollback", "resolved after rollback", False, "same monitoring firmware / alert config and repeated peer signal"),
-        ("episode-crane-12-202607151515", "crane-12", 4, "Rollback", "resolved after rollback", False, "matching peer alert-delivery issue present"),
-        ("episode-crane-16-202607261005", "crane-16", 3, "Rollback", "no clear improvement", True, "same change window, missing intervention reason"),
-        ("episode-crane-19-202607301220", "crane-19", 3, "Rollback", "no clear improvement", True, "counterexamples existed before rollback"),
-        ("episode-crane-21-202608031250", "crane-21", 3, "Rollback", "resolved after config revert", False, "config diff was available"),
-        ("episode-crane-24-202607071155", "crane-24", 3, "Field inspection", "hardware-related", False, "same E-stop alarm, different monitoring firmware"),
+        ("episode-crane-09-202607111015", "crane-09", 4, "Revert to prior profile", "resolved after profile revert", False, "same alert logic / hoist profile and repeated peer signal"),
+        ("episode-crane-12-202607151515", "crane-12", 4, "Revert to prior profile", "resolved after profile revert", False, "matching peer alert-delivery issue present"),
+        ("episode-crane-16-202607261005", "crane-16", 3, "Revert to prior profile", "no clear improvement", True, "same change window, missing intervention reason"),
+        ("episode-crane-19-202607301220", "crane-19", 3, "Revert to prior profile", "no clear improvement", True, "counterexamples existed before profile revert"),
+        ("episode-crane-21-202608031250", "crane-21", 3, "Revert to prior profile", "resolved after profile revert", False, "profile diff was available"),
+        ("episode-crane-24-202607071155", "crane-24", 3, "Field inspection", "hardware-related", False, "same E-stop alarm, different monitoring image"),
         ("episode-crane-25-202607171350", "crane-25", 3, "Field inspection", "hardware-related", False, "load envelope exceeded prior validated range"),
         ("episode-crane-28-202607281040", "crane-28", 3, "Field inspection", "hardware-related", False, "operator reported mechanical drag"),
         ("episode-crane-30-202608011625", "crane-30", 3, "Field inspection", "hardware-related", False, "inspection found drive assembly wear"),
