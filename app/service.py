@@ -34,24 +34,24 @@ class EvidenceService:
         alarm_events = [e for e in timeline if e.type == EvidenceType.alarm]
         alarm = bool(alarm_events)
         missing_delivery = any(
-            e.attributes.get("notification_delivered") is False
-            or e.attributes.get("alert_delivered") is False
+            e.attributes.get("uploading") is False
+            or e.attributes.get("module_healthy") is False
             for e in timeline
         )
         status = KnowledgeStatus(
             confirmed=[x for x in [
-                f"An alarm was recorded: {alarm_events[-1].title}." if alarm else None,
-                "The email/text alert for the E-stop was not recorded as delivered." if missing_delivery else None,
-                "Monitoring device firmware 4.9 and alert routing config C17 were activated within the investigation window."
-                if any(e.type == EvidenceType.deployment and e.attributes.get("firmware") == "4.9" for e in timeline) else None,
+                f"A module-health trigger was recorded: {alarm_events[-1].title}." if alarm else None,
+                "The data processing module was not recorded as healthy/uploading." if missing_delivery else None,
+                "Application 0.36 and device profile C17 were activated within the investigation window."
+                if any(e.type == EvidenceType.deployment and e.attributes.get("firmware") == "0.36" for e in timeline) else None,
             ] if x],
             not_established=[
-                "A software/configuration change caused the incident.",
-                "The incident was device-specific or deployment-wide.",
-                "Matching evidence on another asset would prove a shared root cause.",
+                "The application/profile change caused the module-health issue.",
+                "The issue was device-specific, deployment-wide, or customer-environment related.",
+                "Matching evidence on another asset would prove a shared cause.",
             ],
             evidence_gaps=[
-                "A complete validated machine-state snapshot immediately before the incident is not present.",
+                "A complete module and connection-state snapshot immediately before the trigger is not present.",
                 "Peer-device coverage may be incomplete for this evidence mode.",
             ],
         )
@@ -150,7 +150,7 @@ class EvidenceService:
                 continue
             precursor_events = [e for e in evidence if (e.attributes.get("pattern") in precursors or
                                 any(p in precursors for p in e.attributes.get("patterns", [])))]
-            factors = [f"monitoring firmware {signature.firmware}", f"alert config {signature.config_profile}"]
+            factors = [f"application {signature.firmware}", f"device profile {signature.config_profile}"]
             if precursor_events:
                 factors.append("precursor telemetry")
             score = 70 + min(29, 20 if precursor_events else 0 + len(precursor_events) * 3)
@@ -166,10 +166,10 @@ class EvidenceService:
             exposed_count=exposed, precursor_count=precursor,
             customer_count=len({m.customer for m in matches}), matches=matches,
             status=KnowledgeStatus(
-                confirmed=[f"{exposed} other assets share monitoring firmware / alert config exposure.",
+                confirmed=[f"{exposed} comparable assets share application / device profile exposure.",
                            f"{precursor} exposed assets show the selected precursor telemetry."],
                 not_established=["These assets will experience the same incident.",
-                                 "Shared exposure proves a shared root cause."],
-                evidence_gaps=["No full matching alert-delivery issue is recorded on the matched peer assets.",
+                                 "Shared exposure proves a shared cause."],
+                evidence_gaps=["No full matching module-health issue is recorded on the matched peer assets.",
                                "Operational context is limited to the evidence sources connected for this mode."],
             ))

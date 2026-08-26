@@ -293,7 +293,7 @@ class ReconstructionEngine:
 
         future_capture = [
             "retain 5-minute local runtime trace around critical triggers",
-            "snapshot controller state on E-stop or connectivity loss",
+            "snapshot module and connection state around an unhealthy-device trigger",
             "record manual override with actor, reason, start time and end time",
             "preserve exact configuration diff for activated profile",
             "attach outcome follow-up to the original decision record",
@@ -356,7 +356,7 @@ class ReconstructionEngine:
         asset_id: str,
         decision_time: datetime,
         knowledge_time: datetime | None = None,
-        decision: str = "Hold current rollout",
+        decision: str = "Continue remote troubleshooting",
     ) -> OperationalEpisode:
         knowledge_time = knowledge_time or decision_time
         state = self.state_at(asset_id, decision_time, knowledge_time)
@@ -567,23 +567,23 @@ def synthetic_operational_world(now: datetime | None = None) -> list[CanonicalEv
         ))
 
     ev("CR07-LKG-217", "crane-07", "test_plan", -60, "test", "last_known_good", after="2026-08-12T04:32Z")
-    ev("CR07-FW-49", "crane-07", "deployment", -36, "deployment", "firmware", before="4.8", after="4.9")
+    ev("CR07-FW-49", "crane-07", "deployment", -36, "deployment", "firmware", before="0.35", after="0.36")
     ev("CR07-CFG-C17", "crane-07", "configuration", -35.5, "config_change", "config", before="C16", after="C17")
     ev("CR07-TEST-PASS", "crane-07", "test_plan", -34, "test", "test", after="passed")
-    ev("CR07-TEL-PRE", "crane-07", "telemetry", -0.2, "device_event", "telemetry", after="email_text_alert_delivery_latency_high")
+    ev("CR07-TEL-PRE", "crane-07", "telemetry", -0.2, "device_event", "telemetry", after="module_health_unhealthy_after_reconnect")
     ev("CR07-HUMAN-NETWORK", "crane-07", "operator_note", -0.03, "note", "hypothesis", after="network looked unstable", assertion=AssertionType.human_asserted)
-    ev("CR07-ALARM-ESTOP", "crane-07", "telemetry", 0, "alarm", "alarm", after="E_STOP")
+    ev("CR07-ALARM-ESTOP", "crane-07", "telemetry", 0, "alarm", "alarm", after="MODULE_UNHEALTHY")
     ev("CR07-COUNTER-NETWORK", "crane-07", "telemetry", -0.04, "device_event", "network", after="normal", ingested_offset=2.5)
     ev("CR07-OUTCOME", "crane-07", "service_review", 4, "outcome", "outcome", after="no recurrence after limited test")
 
-    for i in range(8, 57):
+    for i in range(8, 15):
         asset = f"crane-{i:02d}"
-        firmware = "4.9" if i <= 34 else "4.8"
-        config = "C17" if i <= 34 else "C16"
+        firmware = "0.36"
+        config = "C17"
         ev(f"{asset}-FW", asset, "deployment", -40 + i / 100, "deployment", "firmware", after=firmware)
         ev(f"{asset}-CFG", asset, "configuration", -39 + i / 100, "config_change", "config", after=config)
-        if 8 <= i <= 18:
-            ev(f"{asset}-PRE", asset, "telemetry", -1 + i / 100, "device_event", "telemetry", after="email_text_alert_delivery_latency_high")
+        if 8 <= i <= 10:
+            ev(f"{asset}-PRE", asset, "telemetry", -1 + i / 100, "device_event", "telemetry", after="module_health_unhealthy_after_reconnect")
         if i == 20:
             ev(f"{asset}-HUMAN-CONFLICT", asset, "operator_note", -0.5, "note", "hypothesis", after="network looked unstable", assertion=AssertionType.human_asserted)
             ev(f"{asset}-NETWORK-NORMAL", asset, "telemetry", -0.45, "device_event", "network", after="normal", ingested_offset=3)
@@ -666,10 +666,10 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
         }
     if step >= 11:
         new_evidence_notice = {
-            "title": "New peer alert-delivery issue changed the current conclusion",
-            "message": "Crane-08 now reports the same alert-delivery issue under the same monitoring firmware / alert config exposure. Fleet-level concern is stronger, but the 17:05 decision context remains frozen.",
-            "current_conclusion": "Shared alert-delivery issue is now more supported and requires peer inspection.",
-            "historical_context": "Decision at 17:05 was made before the Crane-08 alert-delivery issue was available.",
+            "title": "New peer module-health issue changed the current conclusion",
+            "message": "Crane-08 now reports the same module-health issue under the same monitoring image / device profile exposure. Fleet-level concern is stronger, but the 17:05 decision context remains frozen.",
+            "current_conclusion": "Shared profile or site-access pattern is now more supported and requires peer inspection.",
+            "historical_context": "Decision at 17:05 was made before the Crane-08 module-health issue was available.",
         }
     return {
         "step": step,
@@ -681,15 +681,15 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
         "event_stream": stream[:step + 1],
         "machine_change_detected": {
             "asset_id": "crane-07",
-            "firmware": "monitoring image 4.8 -> 4.9",
-            "configuration": "alert logic / hoist profile C16 -> C17",
+            "firmware": "application 0.35 -> 0.36",
+            "configuration": "device profile C16 -> C17",
             "operator_context": "technician suspected network instability",
-            "telemetry": "email/text alert delivery latency increased before the E-stop trigger",
+            "telemetry": "module health went unhealthy after reconnect attempts",
         },
         "new_review": {
             "created": step >= 3,
-            "title": "Crane-07 machine decision review",
-            "question": "Did the E-stop email/text alert delivery path behave as expected?",
+            "title": "Crane-07 post-change decision review",
+            "question": "Continue remote troubleshooting, revert the device profile, or involve customer site IT?",
             "status": _review_status(evidence_state, reconstructability),
         },
         "reconstruct_what_changed": [c.model_dump(mode="json") for c in changes],
@@ -700,7 +700,7 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
         "where_else": where_else,
         "reconstructability": reconstructability.model_dump(mode="json"),
         "team_decision": {
-            "options": ["Continue investigation", "Hold current rollout", "Revert to prior profile", "Inspect peer assets", "Return to service"],
+            "options": ["Continue remote troubleshooting", "Involve customer site IT", "Revert device profile", "Request field support", "Restart and test again"],
             "recorded": frozen_decision,
         },
         "new_evidence_notice": new_evidence_notice,
@@ -711,18 +711,18 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
 def _live_review_stream() -> list[dict[str, Any]]:
     base = datetime(2026, 8, 14, 16, 32, tzinfo=timezone.utc)
     rows = [
-        (-36.2, "deployment", "Monitoring image 4.9 activated", "build record + rollout manifest", "Monitoring image changed 36h before the alert-delivery review trigger."),
-        (-35.7, "configuration", "Alert logic / hoist profile C17 activated", "Profile audit", "Alert logic / hoist profile changed 35.5h before the alert-delivery review trigger."),
-        (-34.2, "validation", "Email/text alert delivery tests passed; high-load latency test missing", "Azure Test Plans", "Validation exists, but one important stress case is absent."),
-        (-3.0, "telemetry", "Elevated email/text alert delivery latency", "Notehub + IoT Hub", "First matching telemetry signal appears before the missed acknowledgement."),
-        (-0.05, "telemetry", "Alert acknowledgement missing", "IoT Hub", "Runtime signal matches the earlier alert-delivery latency pattern."),
-        (-0.01, "capture", "High-resolution event window captured", "Edge capture", "3-minute machine-state window preserves the local context around the trigger."),
-        (0, "alarm", "E-stop event with alert-delivery behavior under review", "IoT Hub", "Critical trigger freezes a machine decision review context."),
+        (-36.2, "deployment", "Application 0.36 deployed", "build record + rollout manifest", "Application changed 36h before the module-health trigger."),
+        (-35.7, "configuration", "Device profile C17 activated", "Profile audit", "Device profile changed 35.5h before the module-health trigger."),
+        (-34.2, "validation", "Connectivity smoke tests passed; customer-site network check missing", "Azure Test Plans", "Validation exists, but one important site-access check is absent."),
+        (-3.0, "telemetry", "Repeated reconnect attempts", "Notehub + IoT Hub", "First matching telemetry signal appears before the module went unhealthy."),
+        (-0.05, "telemetry", "Module stopped uploading", "IoT Hub", "Runtime signal matches the earlier reconnect pattern."),
+        (-0.01, "capture", "High-resolution machine-state window captured", "Edge capture", "3-minute machine-state window preserves the local context around the trigger."),
+        (0, "alarm", "Module unhealthy; connectivity under review", "IoT Hub", "Critical trigger freezes a machine decision review context."),
         (0.03, "human_context", "Technician suspected network instability", "Service note", "Human assertion is preserved separately from observed evidence."),
-        (0.55, "fleet_compare", "Peer comparison completed", "reconstruction engine", "27 peers share the same alert logic / hoist profile exposure; 11 show the precursor signal."),
-        (0.55, "decision", "Team decision recorded: hold current rollout", "Review workspace", "Decision context is frozen with evidence available at 17:05."),
+        (0.55, "fleet_compare", "Peer comparison completed", "reconstruction engine", "7 comparable cranes share the same application / device profile exposure; 3 show the precursor signal."),
+        (0.55, "decision", "Team decision recorded: continue remote troubleshooting and involve site IT", "Review workspace", "Decision context is frozen with evidence available at 17:05."),
         (2.5, "late_counterevidence", "Network telemetry arrived late: normal state near alert window", "Notehub + IoT Hub delayed retrieval", "Current conclusion updates without rewriting the 17:05 decision."),
-        (3.2, "peer_failure", "Crane-08 reports the same alert-delivery issue", "IoT Hub + service review", "Matching alert-delivery issues update from 0 to 1 after the earlier decision."),
+        (3.2, "peer_failure", "Crane-08 reports the same module-health issue", "IoT Hub + service review", "Matching module-health issues update from 0 to 1 after the earlier decision."),
         (4.0, "outcome", "Historical outcome comparison generated", "operational memory", "Similar reviewed contexts become reusable learning for the next decision."),
     ]
     return [
@@ -745,24 +745,24 @@ def _classified_evidence(records: list[CanonicalEvidence], incident_time: dateti
     human_asserted = []
     inferred = []
     not_established = [
-        "monitoring image 4.9 caused the crane E-stop",
-        "the same alert-delivery issue will affect every exposed crane",
+        "application 0.36 caused the module-health issue",
+        "the same module-health issue will affect every exposed crane",
         "operator override parameters were fully captured",
     ]
     if "CR07-FW-49" in ids:
-        observed.append("monitoring image 4.9 activated")
+        observed.append("application 0.36 deployed")
     if "CR07-CFG-C17" in ids:
-        observed.append("alert logic / hoist profile C17 activated")
+        observed.append("device profile C17 activated")
     if "CR07-TEL-PRE" in ids:
-        observed.append("email/text alert delivery latency increased")
+        observed.append("reconnect attempts increased before module went unhealthy")
     if "CR07-ALARM-ESTOP" in ids:
-        observed.append("E-stop occurred; alert delivery under review")
+        observed.append("module unhealthy; connectivity under review")
     if "CR07-COUNTER-NETWORK" in ids:
         observed.append("late telemetry: network state was normal near alert window")
     if "CR07-HUMAN-NETWORK" in ids:
         human_asserted.append("technician suspected network instability")
     if {"CR07-FW-49", "CR07-CFG-C17", "CR07-TEL-PRE"} <= ids:
-        inferred.append("alert logic / hoist profile change may be related to alert-delivery behavior")
+        inferred.append("device profile change may be related to module-health behavior")
     counterevidence = []
     if "CR07-COUNTER-NETWORK" in ids:
         counterevidence.append("network-instability hypothesis is contradicted by late telemetry")
@@ -790,26 +790,26 @@ def _bounded_interpretation(evidence_state: dict[str, list[str]], peers: PeerCon
         plausible = "plausible but not established"
     return {
         "current_interpretation": [
-            "The alert-delivery issue followed a monitoring image / alert profile change.",
-            f"{exposed_count} peer assets share the same alert logic / hoist profile exposure.",
+            "The module-health issue followed a monitoring image / device profile change.",
+            f"{exposed_count} comparable peer assets share the same application / device profile exposure.",
             f"{precursor_count} exposed peers show the same precursor signal.",
             f"{counterexample_count} exposed peers do not show the precursor signal.",
-            f"{matching_failure_count} matching peer alert-delivery issue has been recorded.",
-            f"A shared alert-delivery issue is {plausible}.",
+            f"{matching_failure_count} matching peer module-health issue has been recorded.",
+            f"A shared profile or site-access issue is {plausible}.",
         ],
         "why": [
-            "Monitoring-image and profile evidence precede the incident.",
-            "The same email/text alert delivery pattern appears near the E-stop event.",
+            "Monitoring-image and profile evidence precede the module-health trigger.",
+            "The same reconnect pattern appears near the unhealthy-device event.",
             "Peer comparison finds exposed machines with and without the precursor.",
         ],
         "what_contradicts_this": [
             *evidence_state["counterevidence"],
-            "16 exposed peers show no matching precursor signal.",
-            "No peer alert-delivery failure is currently recorded.",
+            "4 exposed peers show no matching precursor signal.",
+            "No peer module-health failure is currently recorded.",
         ],
         "what_would_reduce_uncertainty": [
-            "5-minute local controller and alert-delivery trace around the E-stop.",
-            "override actor, reason and exact parameter changes.",
+            "3-minute local module and connection-state trace around the trigger.",
+            "intervention actor, reason and exact recovery steps.",
             "profile diff for C16 -> C17.",
             "follow-up test outcome linked to the original decision.",
         ],
@@ -829,20 +829,20 @@ def _review_status(evidence_state: dict[str, list[str]], reconstructability: Rec
 def _frozen_decision(records: list[CanonicalEvidence], incident_time: datetime, knowledge_time: datetime) -> dict[str, Any]:
     known = [e for e in records if e.asset_id in ("crane-07", None) and e.ingested_at <= knowledge_time]
     return {
-        "decision": "Hold current rollout",
+        "decision": "Continue remote troubleshooting and involve customer site IT",
         "decision_time": LIVE_REVIEW_DECISION_TIME.isoformat(),
         "evidence_available_count": len(known),
         "known": [
-            "monitoring image 4.9 and alert logic / hoist profile C17 were active",
-            "E-stop and alert-delivery latency were observed",
+            "application 0.36 and device profile C17 were active",
+            "module unhealthy and repeated reconnect attempts were observed",
             "peer exposure existed across the fleet",
         ],
         "unknown": [
-            "operator override reason",
-            "local controller state during connectivity loss",
-            "whether monitoring image / profile changes affected alert delivery",
+            "customer-site firewall or access rule",
+            "local module state during connectivity loss",
+            "whether monitoring image / profile changes affected reconnect behavior",
         ],
-        "reason_entered_by_team": "Hold current rollout until peer exposure and missing controller-state evidence are reviewed.",
+        "reason_entered_by_team": "Continue remote troubleshooting and involve customer IT until site-access evidence and recovery path are confirmed.",
         "historical_context_rule": "Later evidence can change the current conclusion, but it does not rewrite what was knowable at decision time.",
     }
 
@@ -869,20 +869,20 @@ def _historical_learning_from_report(report: LearningReport) -> dict[str, Any]:
 
 def _synthetic_similar_episodes(signature: ContextSignature) -> list[SimilarEpisode]:
     rows = [
-        ("episode-crane-11-202607031430", "crane-11", 4, "Continue investigation", "isolated alert-profile issue", False, "same alert logic / hoist profile and precursor; no peer alert-delivery issue"),
+        ("episode-crane-11-202607031430", "crane-11", 4, "Continue investigation", "isolated profile issue", False, "same device profile and precursor; no peer module-health issue"),
         ("episode-crane-14-202607091120", "crane-14", 4, "Continue investigation", "isolated config issue", False, "same precursor, lower load envelope"),
         ("episode-crane-18-202607181620", "crane-18", 4, "Continue investigation", "isolated config issue", False, "same config activation path"),
-        ("episode-crane-22-202607221010", "crane-22", 3, "Continue investigation", "isolated alert-profile issue", False, "same alert logic / hoist profile, no alert-delivery issue"),
+        ("episode-crane-22-202607221010", "crane-22", 3, "Continue investigation", "isolated profile issue", False, "same device profile, no module-health issue"),
         ("episode-crane-27-202607291705", "crane-27", 3, "Continue investigation", "isolated config issue", False, "same precursor signal, different operator context"),
         ("episode-crane-31-202608021330", "crane-31", 3, "Continue investigation", "maintenance note corrected telemetry interpretation", False, "human assertion later contradicted by telemetry"),
         ("episode-crane-33-202608041440", "crane-33", 3, "Continue investigation", "no recurrence after limited test", False, "same missing local controller state"),
         ("episode-crane-34-202608060915", "crane-34", 3, "Continue investigation", "no recurrence after limited test", False, "same evidence gaps"),
-        ("episode-crane-09-202607111015", "crane-09", 4, "Revert to prior profile", "resolved after profile revert", False, "same alert logic / hoist profile and repeated peer signal"),
-        ("episode-crane-12-202607151515", "crane-12", 4, "Revert to prior profile", "resolved after profile revert", False, "matching peer alert-delivery issue present"),
+        ("episode-crane-09-202607111015", "crane-09", 4, "Involve customer site IT", "resolved after site access change", False, "same profile and repeated disconnects; customer network was kicking device offline"),
+        ("episode-crane-12-202607151515", "crane-12", 4, "Revert to prior profile", "resolved after profile revert", False, "matching peer module-health issue present"),
         ("episode-crane-16-202607261005", "crane-16", 3, "Revert to prior profile", "no clear improvement", True, "same change window, missing intervention reason"),
         ("episode-crane-19-202607301220", "crane-19", 3, "Revert to prior profile", "no clear improvement", True, "counterexamples existed before profile revert"),
         ("episode-crane-21-202608031250", "crane-21", 3, "Revert to prior profile", "resolved after profile revert", False, "profile diff was available"),
-        ("episode-crane-24-202607071155", "crane-24", 3, "Field inspection", "hardware-related", False, "same E-stop alarm, different monitoring image"),
+        ("episode-crane-24-202607071155", "crane-24", 3, "Field inspection", "hardware-related", False, "same unhealthy module signal, different monitoring image"),
         ("episode-crane-25-202607171350", "crane-25", 3, "Field inspection", "hardware-related", False, "load envelope exceeded prior validated range"),
         ("episode-crane-28-202607281040", "crane-28", 3, "Field inspection", "hardware-related", False, "operator reported mechanical drag"),
         ("episode-crane-30-202608011625", "crane-30", 3, "Field inspection", "hardware-related", False, "inspection found drive assembly wear"),

@@ -87,7 +87,7 @@ machine change
 → reconstructability gap check
 → frozen human decision
 → late evidence updates the current conclusion without rewriting the historical decision context
-→ peer alert-delivery issue changes the current fleet view while the 16:05 decision remains frozen
+→ peer module-health issue changes the current fleet view while the 17:05 decision remains frozen
 → historical outcome comparison shows what similar reviewed contexts produced
 ```
 

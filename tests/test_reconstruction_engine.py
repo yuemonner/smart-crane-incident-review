@@ -14,7 +14,7 @@ def engine():
 
 def test_reconstructs_firmware_at_incident_time():
     state = engine().state_at("crane-07", DECISION_TIME, KNOWLEDGE_TIME)
-    assert state.fields["software"].value == "4.9"
+    assert state.fields["software"].value == "0.36"
     assert state.fields["configuration"].value == "C17"
 
 
@@ -49,13 +49,13 @@ def test_produces_before_after_config_diff():
 
 def test_finds_exposed_peer_assets_and_precursors():
     result = engine().match_peers("crane-07", DECISION_TIME)
-    assert result.exposed_count == 27
-    assert result.precursor_count == 11
+    assert result.exposed_count == 7
+    assert result.precursor_count == 3
 
 
 def test_includes_counterexamples():
     result = engine().match_peers("crane-07", DECISION_TIME)
-    assert result.counterexample_count == 16
+    assert result.counterexample_count == 4
     assert any(match.exposed and not match.precursor_detected for match in result.matches)
 
 
@@ -83,7 +83,7 @@ def test_generates_minimum_capture_recommendations():
 def test_live_demo_creates_review_after_machine_change():
     report = live_reconstruction_report(5)
     assert report["new_review"]["created"] is True
-    assert report["machine_change_detected"]["firmware"] == "monitoring image 4.8 -> 4.9"
+    assert report["machine_change_detected"]["firmware"] == "application 0.35 -> 0.36"
     assert "observed" in report["evidence_state"]
     assert "Evidence synthesis" in report["ai_reasoning_layer"]["limitation"]
 
@@ -91,25 +91,25 @@ def test_live_demo_creates_review_after_machine_change():
 def test_live_demo_preserves_historical_decision_after_late_evidence():
     before = live_reconstruction_report(9)
     after = live_reconstruction_report(10)
-    assert before["team_decision"]["recorded"]["decision"] == "Hold current rollout"
-    assert after["team_decision"]["recorded"]["decision"] == "Hold current rollout"
+    assert before["team_decision"]["recorded"]["decision"] == "Continue remote troubleshooting and involve customer site IT"
+    assert after["team_decision"]["recorded"]["decision"] == "Continue remote troubleshooting and involve customer site IT"
     assert after["new_evidence_notice"]["title"] == "New evidence changed the current conclusion"
     assert "before CR07-COUNTER-NETWORK" in after["new_evidence_notice"]["historical_context"]
 
 
 def test_live_demo_where_else_includes_counterexamples():
     report = live_reconstruction_report(7)
-    assert report["where_else"]["exposed_count"] == 27
-    assert report["where_else"]["precursor_count"] == 11
-    assert report["where_else"]["counterexample_count"] == 16
+    assert report["where_else"]["exposed_count"] == 7
+    assert report["where_else"]["precursor_count"] == 3
+    assert report["where_else"]["counterexample_count"] == 4
 
 
 def test_live_demo_peer_failure_updates_current_view_without_rewriting_decision():
     report = live_reconstruction_report(11)
-    assert report["active_event"]["title"] == "Crane-08 reports the same alert-delivery issue"
+    assert report["active_event"]["title"] == "Crane-08 reports the same module-health issue"
     assert report["where_else"]["matching_failure_count"] == 1
-    assert report["team_decision"]["recorded"]["decision"] == "Hold current rollout"
-    assert "before the Crane-08 alert-delivery issue" in report["new_evidence_notice"]["historical_context"]
+    assert report["team_decision"]["recorded"]["decision"] == "Continue remote troubleshooting and involve customer site IT"
+    assert "before the Crane-08 module-health issue" in report["new_evidence_notice"]["historical_context"]
 
 
 def test_live_demo_generates_historical_learning_after_outcome():
@@ -123,9 +123,9 @@ def test_live_demo_generates_historical_learning_after_outcome():
 
 def test_builds_operational_episode_with_outcome_as_first_class_object():
     episode = engine().build_episode("crane-07", DECISION_TIME, KNOWLEDGE_TIME)
-    assert episode.context_signature.firmware == "4.9"
+    assert episode.context_signature.firmware == "0.36"
     assert episode.context_signature.configuration == "C17"
-    assert episode.machine_state.fields["software"].value == "4.9"
+    assert episode.machine_state.fields["software"].value == "0.36"
     assert "observed" in episode.knowledge_state
     assert episode.interventions[0].action == "network looked unstable"
     assert episode.outcome.result == "no recurrence after limited test"
@@ -137,7 +137,7 @@ def test_learning_report_is_structured_from_similar_episodes():
     assert learning["similar_contexts"] == 18
     assert len(learning["similar_episodes"]) == 18
     assert {row["previous_action"] for row in learning["outcomes"]} == {
-        "Continue investigation", "Revert to prior profile", "Field inspection"
+        "Continue investigation", "Revert to prior profile", "Field inspection", "Involve customer site IT"
     }
     assert "not a recommendation" in learning["limitation"].lower()
 
