@@ -573,7 +573,7 @@ def synthetic_operational_world(now: datetime | None = None) -> list[CanonicalEv
     ev("CR07-TEL-PRE", "crane-07", "telemetry", -0.2, "device_event", "telemetry", after="module_health_unhealthy_after_reconnect")
     ev("CR07-HUMAN-NETWORK", "crane-07", "operator_note", -0.03, "note", "hypothesis", after="network looked unstable", assertion=AssertionType.human_asserted)
     ev("CR07-ALARM-ESTOP", "crane-07", "telemetry", 0, "alarm", "alarm", after="MODULE_UNHEALTHY")
-    ev("CR07-COUNTER-NETWORK", "crane-07", "telemetry", -0.04, "device_event", "network", after="normal", ingested_offset=2.5)
+    ev("CR07-COUNTER-NETWORK", "crane-07", "telemetry", -0.04, "device_event", "network", after="normal", ingested_offset=170)
     ev("CR07-OUTCOME", "crane-07", "service_review", 4, "outcome", "outcome", after="no recurrence after limited test")
 
     for i in range(8, 15):
@@ -593,8 +593,8 @@ def synthetic_operational_world(now: datetime | None = None) -> list[CanonicalEv
 def demo_reconstruction_report() -> dict[str, Any]:
     world = synthetic_operational_world()
     engine = ReconstructionEngine(world)
-    decision_time = datetime(2026, 8, 14, 16, 32, tzinfo=timezone.utc)
-    knowledge_time = datetime(2026, 8, 14, 17, 5, tzinfo=timezone.utc)
+    decision_time = datetime(2026, 8, 14, 17, 32, tzinfo=timezone.utc)
+    knowledge_time = datetime(2026, 8, 21, 10, 14, tzinfo=timezone.utc)
     return {
         "state_at_decision": engine.state_at("crane-07", decision_time, knowledge_time).model_dump(mode="json"),
         "current_state": engine.state_at("crane-07", decision_time, decision_time + timedelta(hours=6)).model_dump(mode="json"),
@@ -607,8 +607,8 @@ def demo_reconstruction_report() -> dict[str, Any]:
 def demo_learning_report() -> dict[str, Any]:
     world = synthetic_operational_world()
     engine = ReconstructionEngine(world)
-    decision_time = datetime(2026, 8, 14, 16, 32, tzinfo=timezone.utc)
-    knowledge_time = datetime(2026, 8, 14, 17, 5, tzinfo=timezone.utc)
+    decision_time = datetime(2026, 8, 14, 17, 32, tzinfo=timezone.utc)
+    knowledge_time = datetime(2026, 8, 21, 10, 14, tzinfo=timezone.utc)
     episode = engine.build_episode("crane-07", decision_time, knowledge_time)
     learning = engine.learning_report(episode)
     graph = engine.context_graph(episode)
@@ -619,7 +619,7 @@ def demo_learning_report() -> dict[str, Any]:
     }
 
 
-LIVE_REVIEW_DECISION_TIME = datetime(2026, 8, 14, 17, 5, tzinfo=timezone.utc)
+LIVE_REVIEW_DECISION_TIME = datetime(2026, 8, 21, 10, 14, tzinfo=timezone.utc)
 
 
 def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
@@ -631,7 +631,7 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
     counterevidence without exposing proprietary customer records.
     """
     world = synthetic_operational_world()
-    incident_time = datetime(2026, 8, 14, 16, 32, tzinfo=timezone.utc)
+    incident_time = datetime(2026, 8, 14, 17, 32, tzinfo=timezone.utc)
     stream = _live_review_stream()
     max_step = len(stream) - 1
     step = max(0, min(step, max_step))
@@ -660,16 +660,16 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
     if step == 10:
         new_evidence_notice = {
             "title": "New evidence changed the current conclusion",
-            "message": "Late network telemetry shows cellular state was normal near the alert window. The current interpretation changes, but the 17:05 decision context remains frozen.",
+            "message": "Late network telemetry shows cellular state was normal near the alert window. The current interpretation changes, but the Aug 21 decision context remains frozen.",
             "current_conclusion": "Network-instability explanation is less supported than it appeared at the decision time.",
-            "historical_context": "Decision at 17:05 was made before CR07-COUNTER-NETWORK was available.",
+            "historical_context": "Decision at Aug 21 10:14 was made before CR07-COUNTER-NETWORK was available.",
         }
     if step >= 11:
         new_evidence_notice = {
             "title": "New peer module-health issue changed the current conclusion",
-            "message": "Crane-08 now reports the same module-health issue under the same monitoring image / device profile exposure. Fleet-level concern is stronger, but the 17:05 decision context remains frozen.",
+            "message": "Crane-08 now reports the same module-health issue under the same application / device profile exposure. Fleet-level concern is stronger, but the Aug 21 decision context remains frozen.",
             "current_conclusion": "Shared profile or site-access pattern is now more supported and requires peer inspection.",
-            "historical_context": "Decision at 17:05 was made before the Crane-08 module-health issue was available.",
+            "historical_context": "Decision at Aug 21 10:14 was made before the Crane-08 module-health issue was available.",
         }
     return {
         "step": step,
@@ -709,7 +709,7 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
 
 
 def _live_review_stream() -> list[dict[str, Any]]:
-    base = datetime(2026, 8, 14, 16, 32, tzinfo=timezone.utc)
+    base = datetime(2026, 8, 14, 17, 32, tzinfo=timezone.utc)
     rows = [
         (-36.2, "deployment", "Application 0.36 deployed", "build record + rollout manifest", "Application changed 36h before the module-health trigger."),
         (-35.7, "configuration", "Device profile C17 activated", "Profile audit", "Device profile changed 35.5h before the module-health trigger."),
@@ -718,12 +718,12 @@ def _live_review_stream() -> list[dict[str, Any]]:
         (-0.05, "telemetry", "Module stopped uploading", "IoT Hub", "Runtime signal matches the earlier reconnect pattern."),
         (-0.01, "capture", "High-resolution machine-state window captured", "Edge capture", "3-minute machine-state window preserves the local context around the trigger."),
         (0, "alarm", "Module unhealthy; connectivity under review", "IoT Hub", "Critical trigger freezes a machine decision review context."),
-        (0.03, "human_context", "Technician suspected network instability", "Service note", "Human assertion is preserved separately from observed evidence."),
-        (0.55, "fleet_compare", "Peer comparison completed", "reconstruction engine", "7 comparable cranes share the same application / device profile exposure; 3 show the precursor signal."),
-        (0.55, "decision", "Team decision recorded: continue remote troubleshooting and involve site IT", "Review workspace", "Decision context is frozen with evidence available at 17:05."),
-        (2.5, "late_counterevidence", "Network telemetry arrived late: normal state near alert window", "Notehub + IoT Hub delayed retrieval", "Current conclusion updates without rewriting the 17:05 decision."),
-        (3.2, "peer_failure", "Crane-08 reports the same module-health issue", "IoT Hub + service review", "Matching module-health issues update from 0 to 1 after the earlier decision."),
-        (4.0, "outcome", "Historical outcome comparison generated", "operational memory", "Similar reviewed contexts become reusable learning for the next decision."),
+        (160.7, "human_context", "Team opened investigation after UI symptom", "Service note", "Human discovery is preserved separately from the first abnormal machine evidence."),
+        (160.8, "fleet_compare", "Affected vs unaffected comparison completed", "reconstruction engine", "7 comparable cranes share the same application / device profile exposure; 3 show the precursor signal."),
+        (161.0, "decision", "Team action recorded: continue remote troubleshooting and involve site IT", "Review workspace", "Investigation context is frozen with evidence available on Aug 21."),
+        (170.0, "late_counterevidence", "Network telemetry arrived late: normal state near alert window", "Notehub + IoT Hub delayed retrieval", "Current conclusion updates without rewriting the Aug 21 investigation context."),
+        (171.0, "peer_failure", "Crane-08 reports the same module-health issue", "IoT Hub + service review", "Matching module-health issues update from 0 to 1 after the earlier action."),
+        (175.0, "outcome", "Historical outcome comparison generated", "operational memory", "Similar reviewed contexts become reusable learning for the next investigation."),
     ]
     return [
         {
@@ -790,7 +790,7 @@ def _bounded_interpretation(evidence_state: dict[str, list[str]], peers: PeerCon
         plausible = "plausible but not established"
     return {
         "current_interpretation": [
-            "The module-health issue followed a monitoring image / device profile change.",
+            "The module-health issue followed an application / device profile change.",
             f"{exposed_count} comparable peer assets share the same application / device profile exposure.",
             f"{precursor_count} exposed peers show the same precursor signal.",
             f"{counterexample_count} exposed peers do not show the precursor signal.",

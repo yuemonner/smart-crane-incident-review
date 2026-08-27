@@ -2,7 +2,7 @@ from datetime import datetime, timedelta, timezone
 
 from .models import EvidenceEvent, EvidenceType
 
-INCIDENT_TIME = datetime(2026, 8, 14, 16, 32, tzinfo=timezone.utc)
+INCIDENT_TIME = datetime(2026, 8, 14, 17, 32, tzinfo=timezone.utc)
 
 
 def _event(id: str, type: EvidenceType, hours: float, entity: str | None, title: str,
@@ -30,26 +30,26 @@ def demo_events() -> list[EvidenceEvent]:
         _event("DEPLOY-4.9-C17", EvidenceType.deployment, -36, "Crane-07",
                "Application 0.36 deployed", "Deployment manifest",
                {"firmware": "0.36", "previous_firmware": "0.35", "config_profile": "C17", "build": 1842,
-                "deployed_at": "2026-08-13 04:32 UTC", **crane_context}),
+                "deployed_at": "2026-08-13 05:32 UTC", **crane_context}),
         _event("CFG-07-C17", EvidenceType.config_change, -35.5, "Crane-07",
                "Device profile C17 activated", "Config audit",
-               {"config_profile": "C17", "previous": "C16", "activated_at": "2026-08-13 05:02 UTC", **crane_context}),
+               {"config_profile": "C17", "previous": "C16", "activated_at": "2026-08-13 06:02 UTC", **crane_context}),
         _event("IOT-07-LAT-1", EvidenceType.device_event, -3, "Crane-07",
                "Repeated reconnect attempts", "IoT Hub",
                {"pattern": "module_health_unhealthy_after_reconnect", "value_ms": 1880, "load_pct": 84,
-                "observed_at": "2026-08-14 13:32 UTC", **crane_context}),
+                "observed_at": "2026-08-14 14:32 UTC", **crane_context}),
         _event("IOT-07-LAT-2", EvidenceType.device_event, -0.05, "Crane-07",
                "Module stopped uploading", "IoT Hub",
                {"pattern": "module_upload_missing", "load_pct": 87, "latency_ms": 2210,
-                "observed_at": "2026-08-14 16:29 UTC", **crane_context}),
+                "observed_at": "2026-08-14 17:29 UTC", **crane_context}),
         _event("EDGE-07-HIRES", EvidenceType.device_event, -0.01, "Crane-07",
                "High-resolution machine-state window captured", "Edge capture",
-               {"capture_window": "16:29-16:32 UTC", "duration_sec": 180, "sample_rate_hz": 50,
+               {"capture_window": "17:29-17:32 UTC", "duration_sec": 180, "sample_rate_hz": 50,
                 "signals": "machine state, module state, connection state, controller signals", "load_pct": 87, **crane_context}),
         _event("ALARM-07-ESTOP", EvidenceType.alarm, 0, "Crane-07",
                "Module unhealthy; connectivity under review", "IoT Hub",
                {"alarm": "MODULE_UNHEALTHY", "load_pct": 87, "module_healthy": False,
-                "uploading": False, "trigger_time": "2026-08-14 16:32 UTC", **crane_context}),
+                "uploading": False, "trigger_time": "2026-08-14 17:32 UTC", **crane_context}),
     ]
 
     # Seven comparable peers share the same application / profile exposure; three show matching module-health signals.

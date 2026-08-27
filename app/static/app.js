@@ -54,10 +54,10 @@ function renderUnexpectedShell(){
   document.querySelector('header .crumb').textContent='SMART CRANE · OPERATIONAL INVESTIGATION';
   document.querySelector('header h1').innerHTML='Crane-07 · Operational Investigation <em id="lensDescription">director operating picture</em>';
   document.querySelector('.decision-under-review').innerHTML='<b>Signal under review:</b> Data processing module repeatedly loses connectivity after a recent deployment.';
-  document.querySelector('#overview .context-strip').innerHTML='<div><span>Last known healthy</span><b>Aug 12 · 14:20</b></div><div><span>Recent change</span><b>App 0.36 · Aug 13</b></div><div><span>First abnormal</span><b>Aug 13 · 18:42</b></div><div><span>Human discovery</span><b>Aug 21 · 10:14</b></div><div><span>Affected elsewhere</span><b>3 of 7 comparable</b></div>';
-  document.querySelector('.overview-grid').innerHTML='<article class="panel summary-card"><span class="eyebrow">SIGNAL</span><strong>Module unhealthy</strong><small>device stopped reporting normally</small></article><article class="panel summary-card"><span class="eyebrow">CURRENT QUESTION</span><strong>Device or deployment?</strong><small>application, profile, or customer environment</small></article><article class="panel summary-card"><span class="eyebrow">BLOCKERS</span><strong id="gapCount">—</strong><small>decision evidence still missing</small></article><article class="panel summary-card"><span class="eyebrow">CURRENT ACTION</span><strong id="decisionStatusShort">PENDING</strong><small id="directorEscalation">Not evaluated</small></article>';
-  document.querySelector('.decision-conditions').innerHTML='<span class="eyebrow">WHAT CHANGED BETWEEN HEALTHY AND ABNORMAL?</span><h3>Application changed. Firmware and site profile are unchanged in current evidence.</h3><div class="condition-grid"><div><b>Changed</b><span>Application 0.35 → 0.36</span></div><div><b>Unchanged</b><span>Firmware F14</span></div><div><b>Unchanged</b><span>OS config C17</span></div><div><b>Unchanged</b><span>Network profile N7</span></div><div><b>Observed</b><span>Reconnect failures</span></div><div class="missing"><b>Not established</b><span>Customer firewall rule</span></div><div class="missing"><b>Missing</b><span>Exact disconnect reason</span></div></div><small>Your monitoring system tells you something changed. This workspace reconstructs what changed around it.</small>';
-  document.querySelector('.related-memory').innerHTML='<span class="eyebrow">RELATED MEMORY</span><h3>Similar pattern detected with Crane-09</h3><p>Previous decision: continue remote troubleshooting and involve customer IT after repeated disconnects. Outcome: customer network settings were kicking the device offline; weekly restart was used until site access was fixed.</p><small>Historical decisions are context for review, not a recommendation.</small>';
+  document.querySelector('#overview .context-strip').innerHTML='<div><span>Last known healthy</span><b>Aug 12 · 05:32</b></div><div><span>Recent change</span><b>App 0.36 · Aug 13</b></div><div><span>First abnormal</span><b>Aug 14 · 14:32</b></div><div><span>Human discovery</span><b>Aug 21 · 10:14</b></div><div><span>Detection gap</span><b>6d 19h</b></div>';
+  document.querySelector('.overview-grid').innerHTML='<article class="panel summary-card"><span class="eyebrow">SIGNAL</span><strong>Module unhealthy</strong><small>device stopped reporting normally</small></article><article class="panel summary-card"><span class="eyebrow">CURRENT INVESTIGATION</span><strong>What differs?</strong><small>affected vs unaffected cranes</small></article><article class="panel summary-card"><span class="eyebrow">EVIDENCE GAPS</span><strong id="gapCount">—</strong><small>context still missing</small></article><article class="panel summary-card"><span class="eyebrow">TEAM ACTION</span><strong id="decisionStatusShort">PENDING</strong><small id="directorEscalation">Not evaluated</small></article>';
+  document.querySelector('.decision-conditions').innerHTML='<span class="eyebrow">WHAT CHANGED BETWEEN HEALTHY AND ABNORMAL?</span><h3>Two known changes occurred before the first abnormal signal.</h3><div class="condition-grid"><div><b>Changed</b><span>Application 0.35 → 0.36</span></div><div><b>Changed</b><span>Device profile C16 → C17</span></div><div><b>Unchanged</b><span>Firmware F14</span></div><div><b>Unchanged</b><span>Network profile N7</span></div><div><b>Observed</b><span>Reconnect failures</span></div><div class="missing"><b>Not established</b><span>Customer firewall / site-network change</span></div><div class="missing"><b>Missing</b><span>Exact disconnect reason</span></div></div><small>Your monitoring system tells you something is unhealthy. This workspace reconstructs what changed around it.</small>';
+  document.querySelector('.related-memory').innerHTML='<span class="eyebrow">RELATED MEMORY</span><h3>1 potentially related historical case</h3><p>Repeated disconnects · different site · similar network/reconnect pattern.</p><small>Historical outcome from another case is available on drill-down. It does not establish the cause of the current signal.</small>';
   document.querySelector('.director-grid').innerHTML='<article class="panel lkg-card"><span class="eyebrow">LAST KNOWN GOOD</span><div id="lkgState" class="state-pill">NOT ESTABLISHED</div><dl><dt>Observed</dt><dd id="lkgObserved">Not recorded</dd><dt>Software</dt><dd id="lkgSoftware">Not recorded</dd><dt>Configuration</dt><dd id="lkgConfig">Not recorded</dd><dt>Runtime state</dt><dd id="lkgRuntime">Not recorded</dd><dt>Validation</dt><dd id="lkgTests">Not recorded</dd><dt>Validated by</dt><dd id="lkgValidator">Not recorded</dd></dl><small id="lkgLimitation"></small></article><article class="panel scope-card"><span class="eyebrow">EXPOSURE SCOPE</span><div id="scopeState" class="state-pill">NOT ESTABLISHED</div><p id="scopeExplanation">Waiting for comparison evidence.</p><dl><dt>Review-device evidence</dt><dd id="scopeDevice">—</dd><dt>Peer devices with matching signals</dt><dd id="scopeSignals">—</dd><dt>Peer devices with matching alert issues</dt><dd id="scopeIncidents">—</dd></dl><small>Comparison supports review prioritization; it does not establish a shared cause.</small></article>';
   document.querySelector('.memory').innerHTML='<span class="eyebrow">CURRENT HUMAN DECISION</span><p><b>No human decision recorded yet.</b></p><p>When the team records a decision, the workspace freezes the evidence available at that time. Later evidence updates the current view, not the historical decision.</p><div class="memory-grid"><input id="memoryOwner" placeholder="Owner"><input id="memoryCheckpoint" type="datetime-local"><select id="memoryDecision"><option value="">Decision not recorded</option><optgroup label="Record decision"><option>Continue remote troubleshooting</option><option>Involve customer site IT</option><option>Revert device profile</option><option>Request field support</option></optgroup><optgroup label="Follow-up"><option>Restart and test again</option></optgroup></select><input id="memoryOutcome" placeholder="Observed outcome after the decision"><button id="saveMemory">Save local record</button></div><small id="memoryMessage"></small>';
   bindMemorySave();
@@ -215,25 +215,25 @@ function renderKnowledgeState(i,w){
 function renderReconstructability(i,w){
   const l=i.last_known_good||{};
   setList('alreadyReconstructable',[
-    l.software_revision?`software revision ${l.software_revision}`:'software revision when deployment evidence exists',
-    l.config_profile?`configuration ${l.config_profile}`:'configuration when source record exists',
-    i.timeline.some(e=>e.type==='alarm')?'alarm event and timestamp':'alarm event when source record exists',
-    i.timeline.some(e=>e.attributes?.capture_window)?'3-minute high-resolution event window':'high-resolution event window when capture exists',
+    i.timeline.some(e=>e.attributes?.capture_window)?'existing 3-minute high-resolution event capture':'high-resolution event window when capture exists',
+    'device twin / module health state when source record exists',
+    l.software_revision?`application version ${l.software_revision}`:'application version when deployment evidence exists',
+    l.config_profile?`device profile ${l.config_profile}`:'device profile when source record exists',
     l.test_evidence?.length?l.test_evidence.join(' · '):'test result when validation marker exists',
   ]);
   setList('notReconstructable',[
-    'operator override reason',
-    'module state immediately before the device went unhealthy',
-    'exact config diff across every affected module',
-    'intervention start/end boundaries',
-    'local state during connectivity loss',
+    'exact local network state immediately before disconnect',
+    'module state during connectivity loss',
+    'exact reason a manual restart was performed',
+    'customer-side firewall / network state at that time',
+    'whether every affected device had identical firmware / network configuration',
   ]);
   setList('captureNextTime',[
-    '3-minute runtime trace around module-health triggers',
-    'critical-event snapshot of image/profile/runtime state',
-    'append-only intervention record with reason and time window',
-    'explicit last-known-good marker after validation',
-    'source-linked decision record with outcome follow-up',
+    'trigger → existing high-resolution capture',
+    'trigger → deployment / profile state',
+    'trigger → peer comparison',
+    'intervention → actor / reason / time window',
+    'team action → evidence snapshot → outcome follow-up',
   ]);
 }
 function renderDiff(i){const c=i.what_changed,d=c.find(e=>e.type==='deployment'),cfg=c.find(e=>e.type==='config_change'),commit=c.find(e=>e.type==='commit'),build=c.find(e=>e.type==='build'),tests=c.filter(e=>e.type==='test'),signals=i.timeline.filter(physical);const elapsed=e=>d&&e?`${((new Date(e.occurred_at)-new Date(d.occurred_at))/36e5).toFixed(1)}h after change`:'Not established';const rows=[['Monitoring image',d?.attributes?.previous_firmware||'Not in evidence',d?.attributes?.firmware||'Not in evidence'],['Device profile',cfg?.attributes?.previous||'Not in evidence',cfg?.attributes?.config_profile||'Not in evidence'],['Reconnect handling',commit?.attributes?.commit||commit?.id||'Not in evidence',commit?.title||'No linked change'],['Validation',build?.title||'Build evidence unavailable',tests.length?tests.map(x=>x.title).join(' · '):'Test evidence unavailable'],['First module-health signal','—',elapsed(signals[0])],['Review trigger','—',elapsed(signals.find(e=>e.type==='alarm'))],['Causal link','—','Not established']];$('changes').innerHTML=rows.map(([l,b,a])=>`<article class="diffrow"><span>${esc(l)}</span><div><small>BEFORE / EVIDENCE</small><b>${esc(b)}</b></div><i>→</i><div><small>AFTER / OBSERVATION</small><b>${esc(a)}</b></div></article>`).join('')}

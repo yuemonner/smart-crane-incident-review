@@ -13,6 +13,7 @@
 .director-hidden{display:none}
 .incident-picker{grid-template-columns:1.15fr 1fr 1.35fr 1fr}
 .decision-options button{border:1px solid #dce3df;border-radius:18px;padding:7px 10px;background:#fbfcfb;color:#15211d;font:inherit;cursor:pointer}
+.comparison-table{margin:-2px 0 20px}.comparison-table table{width:100%;border-collapse:collapse;margin-top:12px}.comparison-table th{text-align:left;font-size:10px;letter-spacing:1px;color:#75837d;text-transform:uppercase;border-bottom:1px solid var(--line);padding:9px}.comparison-table td{border-bottom:1px solid #edf0ee;padding:11px 9px}.comparison-table td:nth-child(2),.comparison-table td:nth-child(3){font-family:'JetBrains Mono';font-weight:700}.comparison-table small{display:block;color:#68736e;margin-top:10px}
 .decision-options button:hover{border-color:#102a22;background:#f1f5f2}
 .condition-grid .partial b{color:#9a7527}
 .related-memory{border-color:#cbd8d1;background:#fbfdfb}

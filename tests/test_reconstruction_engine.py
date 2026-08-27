@@ -4,8 +4,8 @@ from app.reconstruction import CoverageState, ReconstructionEngine, demo_learnin
 from app.reconstruction import live_reconstruction_report
 
 
-DECISION_TIME = datetime(2026, 8, 14, 16, 32, tzinfo=timezone.utc)
-KNOWLEDGE_TIME = datetime(2026, 8, 14, 17, 5, tzinfo=timezone.utc)
+DECISION_TIME = datetime(2026, 8, 14, 17, 32, tzinfo=timezone.utc)
+KNOWLEDGE_TIME = datetime(2026, 8, 21, 10, 14, tzinfo=timezone.utc)
 
 
 def engine():
@@ -21,7 +21,7 @@ def test_reconstructs_firmware_at_incident_time():
 def test_does_not_use_evidence_discovered_after_decision_time():
     state = engine().state_at("crane-07", DECISION_TIME, KNOWLEDGE_TIME)
     assert "CR07-COUNTER-NETWORK" in state.ignored_late_evidence_ids
-    current = engine().state_at("crane-07", DECISION_TIME, DECISION_TIME + timedelta(hours=6))
+    current = engine().state_at("crane-07", DECISION_TIME, DECISION_TIME + timedelta(days=8))
     assert "CR07-COUNTER-NETWORK" not in current.ignored_late_evidence_ids
 
 
