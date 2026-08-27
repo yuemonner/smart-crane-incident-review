@@ -182,6 +182,7 @@ class OperationalContextGraph(BaseModel):
 
 STATE_SUBJECTS = {
     "firmware": ("software", "Software or firmware version at the review time."),
+    "application": ("software", "Application version at the review time."),
     "config": ("configuration", "Configuration profile at the review time."),
     "test": ("last_test", "Most recent validation or test result before the review time."),
     "last_known_good": ("last_known_good", "Explicit validated state marker before the review time."),
@@ -566,8 +567,8 @@ def synthetic_operational_world(now: datetime | None = None) -> list[CanonicalEv
             provenance=provenance,
         ))
 
-    ev("CR07-LKG-217", "crane-07", "test_plan", -60, "test", "last_known_good", after="2026-08-12T04:32Z")
-    ev("CR07-FW-49", "crane-07", "deployment", -36, "deployment", "firmware", before="0.35", after="0.36")
+    ev("CR07-LKG-217", "crane-07", "test_plan", -61, "test", "last_known_good", after="2026-08-12T05:32Z")
+    ev("CR07-FW-49", "crane-07", "deployment", -36, "deployment", "application", before="0.35", after="0.36")
     ev("CR07-CFG-C17", "crane-07", "configuration", -35.5, "config_change", "config", before="C16", after="C17")
     ev("CR07-TEST-PASS", "crane-07", "test_plan", -34, "test", "test", after="passed")
     ev("CR07-TEL-PRE", "crane-07", "telemetry", -0.2, "device_event", "telemetry", after="module_health_unhealthy_after_reconnect")
@@ -580,7 +581,7 @@ def synthetic_operational_world(now: datetime | None = None) -> list[CanonicalEv
         asset = f"crane-{i:02d}"
         firmware = "0.36"
         config = "C17"
-        ev(f"{asset}-FW", asset, "deployment", -40 + i / 100, "deployment", "firmware", after=firmware)
+        ev(f"{asset}-FW", asset, "deployment", -40 + i / 100, "deployment", "application", after=firmware)
         ev(f"{asset}-CFG", asset, "configuration", -39 + i / 100, "config_change", "config", after=config)
         if 8 <= i <= 10:
             ev(f"{asset}-PRE", asset, "telemetry", -1 + i / 100, "device_event", "telemetry", after="module_health_unhealthy_after_reconnect")
@@ -593,7 +594,7 @@ def synthetic_operational_world(now: datetime | None = None) -> list[CanonicalEv
 def demo_reconstruction_report() -> dict[str, Any]:
     world = synthetic_operational_world()
     engine = ReconstructionEngine(world)
-    decision_time = datetime(2026, 8, 14, 17, 32, tzinfo=timezone.utc)
+    decision_time = datetime(2026, 8, 14, 18, 32, tzinfo=timezone.utc)
     knowledge_time = datetime(2026, 8, 21, 10, 14, tzinfo=timezone.utc)
     return {
         "state_at_decision": engine.state_at("crane-07", decision_time, knowledge_time).model_dump(mode="json"),
@@ -607,7 +608,7 @@ def demo_reconstruction_report() -> dict[str, Any]:
 def demo_learning_report() -> dict[str, Any]:
     world = synthetic_operational_world()
     engine = ReconstructionEngine(world)
-    decision_time = datetime(2026, 8, 14, 17, 32, tzinfo=timezone.utc)
+    decision_time = datetime(2026, 8, 14, 18, 32, tzinfo=timezone.utc)
     knowledge_time = datetime(2026, 8, 21, 10, 14, tzinfo=timezone.utc)
     episode = engine.build_episode("crane-07", decision_time, knowledge_time)
     learning = engine.learning_report(episode)
@@ -631,7 +632,7 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
     counterevidence without exposing proprietary customer records.
     """
     world = synthetic_operational_world()
-    incident_time = datetime(2026, 8, 14, 17, 32, tzinfo=timezone.utc)
+    incident_time = datetime(2026, 8, 14, 18, 32, tzinfo=timezone.utc)
     stream = _live_review_stream()
     max_step = len(stream) - 1
     step = max(0, min(step, max_step))
@@ -660,7 +661,7 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
     if step == 10:
         new_evidence_notice = {
             "title": "New evidence changed the current conclusion",
-            "message": "Late network telemetry shows cellular state was normal near the alert window. The current interpretation changes, but the Aug 21 decision context remains frozen.",
+            "message": "Late network telemetry shows cellular state was normal near the module-health review window. The current interpretation changes, but the Aug 21 decision context remains frozen.",
             "current_conclusion": "Network-instability explanation is less supported than it appeared at the decision time.",
             "historical_context": "Decision at Aug 21 10:14 was made before CR07-COUNTER-NETWORK was available.",
         }
@@ -681,7 +682,7 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
         "event_stream": stream[:step + 1],
         "machine_change_detected": {
             "asset_id": "crane-07",
-            "firmware": "application 0.35 -> 0.36",
+            "application": "application 0.35 -> 0.36",
             "configuration": "device profile C16 -> C17",
             "operator_context": "technician suspected network instability",
             "telemetry": "module health went unhealthy after reconnect attempts",
@@ -709,19 +710,19 @@ def live_reconstruction_report(step: int = 0) -> dict[str, Any]:
 
 
 def _live_review_stream() -> list[dict[str, Any]]:
-    base = datetime(2026, 8, 14, 17, 32, tzinfo=timezone.utc)
+    base = datetime(2026, 8, 14, 18, 32, tzinfo=timezone.utc)
     rows = [
-        (-36.2, "deployment", "Application 0.36 deployed", "build record + rollout manifest", "Application changed 36h before the module-health trigger."),
-        (-35.7, "configuration", "Device profile C17 activated", "Profile audit", "Device profile changed 35.5h before the module-health trigger."),
-        (-34.2, "validation", "Connectivity smoke tests passed; customer-site network check missing", "Azure Test Plans", "Validation exists, but one important site-access check is absent."),
+        (-36.0, "deployment", "Application 0.36 deployed", "build record + rollout manifest", "Application changed 36h before the module-health trigger."),
+        (-35.5, "configuration", "Device profile C17 activated", "Profile audit", "Device profile changed 35.5h before the module-health trigger."),
+        (-34.0, "validation", "Connectivity smoke tests passed; customer-site network check missing", "Azure Test Plans", "Validation exists, but one important site-access check is absent."),
         (-3.0, "telemetry", "Repeated reconnect attempts", "Notehub + IoT Hub", "First matching telemetry signal appears before the module went unhealthy."),
         (-0.05, "telemetry", "Module stopped uploading", "IoT Hub", "Runtime signal matches the earlier reconnect pattern."),
         (-0.01, "capture", "High-resolution machine-state window captured", "Edge capture", "3-minute machine-state window preserves the local context around the trigger."),
         (0, "alarm", "Module unhealthy; connectivity under review", "IoT Hub", "Critical trigger freezes a machine decision review context."),
-        (160.7, "human_context", "Team opened investigation after UI symptom", "Service note", "Human discovery is preserved separately from the first abnormal machine evidence."),
-        (160.8, "fleet_compare", "Affected vs unaffected comparison completed", "reconstruction engine", "7 comparable cranes share the same application / device profile exposure; 3 show the precursor signal."),
-        (161.0, "decision", "Team action recorded: continue remote troubleshooting and involve site IT", "Review workspace", "Investigation context is frozen with evidence available on Aug 21."),
-        (170.0, "late_counterevidence", "Network telemetry arrived late: normal state near alert window", "Notehub + IoT Hub delayed retrieval", "Current conclusion updates without rewriting the Aug 21 investigation context."),
+        (159.7, "human_context", "Team opened investigation after UI symptom", "Service note", "Human discovery is preserved separately from the first abnormal machine evidence."),
+        (159.8, "fleet_compare", "Affected vs unaffected comparison completed", "reconstruction engine", "7 comparable cranes share the same application / device profile exposure; 3 show the precursor signal."),
+        (160.0, "decision", "Team action recorded: continue remote troubleshooting and involve site IT", "Review workspace", "Investigation context is frozen with evidence available on Aug 21."),
+        (170.0, "late_counterevidence", "Network telemetry arrived late: normal state near the module-health review window", "Notehub + IoT Hub delayed retrieval", "Current conclusion updates without rewriting the Aug 21 investigation context."),
         (171.0, "peer_failure", "Crane-08 reports the same module-health issue", "IoT Hub + service review", "Matching module-health issues update from 0 to 1 after the earlier action."),
         (175.0, "outcome", "Historical outcome comparison generated", "operational memory", "Similar reviewed contexts become reusable learning for the next investigation."),
     ]
@@ -747,7 +748,7 @@ def _classified_evidence(records: list[CanonicalEvidence], incident_time: dateti
     not_established = [
         "application 0.36 caused the module-health issue",
         "the same module-health issue will affect every exposed crane",
-        "operator override parameters were fully captured",
+        "customer-side firewall state was captured",
     ]
     if "CR07-FW-49" in ids:
         observed.append("application 0.36 deployed")
@@ -758,7 +759,7 @@ def _classified_evidence(records: list[CanonicalEvidence], incident_time: dateti
     if "CR07-ALARM-ESTOP" in ids:
         observed.append("module unhealthy; connectivity under review")
     if "CR07-COUNTER-NETWORK" in ids:
-        observed.append("late telemetry: network state was normal near alert window")
+        observed.append("late telemetry: network state was normal near the module-health review window")
     if "CR07-HUMAN-NETWORK" in ids:
         human_asserted.append("technician suspected network instability")
     if {"CR07-FW-49", "CR07-CFG-C17", "CR07-TEL-PRE"} <= ids:
@@ -804,14 +805,14 @@ def _bounded_interpretation(evidence_state: dict[str, list[str]], peers: PeerCon
         ],
         "what_contradicts_this": [
             *evidence_state["counterevidence"],
-            "4 exposed peers show no matching precursor signal.",
-            "No peer module-health failure is currently recorded.",
+            "Four cranes share application 0.36 and profile C17 without the selected signal.",
+            "No matching full module-health failure has been recorded on peer assets.",
         ],
         "what_would_reduce_uncertainty": [
-            "3-minute local module and connection-state trace around the trigger.",
-            "intervention actor, reason and exact recovery steps.",
-            "profile diff for C16 -> C17.",
-            "follow-up test outcome linked to the original decision.",
+            "Compare firmware versions across affected and unaffected cranes.",
+            "Compare network profile and reconnect history.",
+            "Retrieve site-side network/firewall evidence.",
+            "Confirm module state during the disconnect window.",
         ],
         "limitation": "Evidence synthesis uses facts already reconstructed by the backend. It does not create facts or establish causality.",
     }

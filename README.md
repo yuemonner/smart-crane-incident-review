@@ -47,15 +47,15 @@ It proves five reusable capabilities:
 2. **Temporal state reconstruction** — answers what could be proven about an asset at a decision time without using evidence that arrived later.
 3. **Change detection** — returns what changed in the lookback window with source, timestamp and evidence strength, without claiming cause.
 4. **Reconstructability analysis** — marks fields as `COMPLETE`, `PARTIAL` or `MISSING` and recommends minimum future capture.
-5. **Peer context matching** — finds assets with the same monitoring firmware / alert config signature, matching precursor signals and counterexamples.
+5. **Peer context matching** — finds assets with the same application / device profile signature, matching precursor signals and counterexamples.
 
 It also introduces three backend primitives for the operational learning layer:
 
-- **ContextSignature** — the reusable fingerprint of firmware, configuration, precursor signal, alarm, missing fields and source evidence.
+- **ContextSignature** — the reusable fingerprint of application, configuration, precursor signal, module-health state, missing fields and source evidence.
 - **OperationalEpisode** — the reviewed unit of machine state, knowledge state, intervention, human decision and outcome.
 - **OutcomeRecord** — the follow-up result attached to a decision episode, used for future retrieval and learning.
 
-The synthetic world creates 50 cranes with mixed firmware, configuration, telemetry, human assertions, late-arriving counterevidence and missing intervention context. It exists to test reconstruction logic before connecting proprietary customer systems.
+The synthetic world creates 50 cranes with mixed application versions, firmware versions, configurations, telemetry, human assertions, late-arriving counterevidence and missing intervention context. It exists to test reconstruction logic before connecting proprietary customer systems.
 
 Run the portable backend report:
 
@@ -95,7 +95,7 @@ The AI reasoning layer is deliberately constrained: backend reconstruction deter
 
 The eval suite checks that the engine:
 
-- reconstructs firmware/configuration at incident time;
+- reconstructs application/configuration at review time;
 - does not use evidence discovered after the decision time;
 - distinguishes observed evidence from human assertion;
 - detects missing intervention reason;
@@ -177,7 +177,7 @@ Human-recorded owner, checkpoint, and explicit decision fields are stored in `wo
 Example request body:
 
 ```json
-{"entity_id":"Crane-07","incident_time":"2026-08-14T14:32:00Z","window_hours":72,"evidence_mode":"demo"}
+{"entity_id":"Crane-07","incident_time":"2026-08-14T18:32:00Z","window_hours":72,"evidence_mode":"demo"}
 ```
 
 ## Validation still required

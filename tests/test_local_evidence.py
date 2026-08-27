@@ -6,9 +6,9 @@ def test_real_local_reliability_evidence_is_parsed_without_secrets(tmp_path):
     evidence.write_text(
         "\n".join([
             "device a395b49cb6d5",
-            "2026-08-14 14:31:09 Redis Error 111 Connection refused",
-            "2026-08-14 14:32:11 MultipleConnectionsException Multiple connections detected",
-            "2026-08-14 14:33:00 password should never become evidence",
+            "2026-08-14 15:31:09 Redis Error 111 Connection refused",
+            "2026-08-14 15:32:11 MultipleConnectionsException Multiple connections detected",
+            "2026-08-14 15:33:00 password should never become evidence",
         ])
     )
     connector = LocalSmartCraneEvidenceConnector(str(tmp_path))

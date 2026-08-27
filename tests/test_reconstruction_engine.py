@@ -4,7 +4,7 @@ from app.reconstruction import CoverageState, ReconstructionEngine, demo_learnin
 from app.reconstruction import live_reconstruction_report
 
 
-DECISION_TIME = datetime(2026, 8, 14, 17, 32, tzinfo=timezone.utc)
+DECISION_TIME = datetime(2026, 8, 14, 18, 32, tzinfo=timezone.utc)
 KNOWLEDGE_TIME = datetime(2026, 8, 21, 10, 14, tzinfo=timezone.utc)
 
 
@@ -83,7 +83,7 @@ def test_generates_minimum_capture_recommendations():
 def test_live_demo_creates_review_after_machine_change():
     report = live_reconstruction_report(5)
     assert report["new_review"]["created"] is True
-    assert report["machine_change_detected"]["firmware"] == "application 0.35 -> 0.36"
+    assert report["machine_change_detected"]["application"] == "application 0.35 -> 0.36"
     assert "observed" in report["evidence_state"]
     assert "Evidence synthesis" in report["ai_reasoning_layer"]["limitation"]
 
