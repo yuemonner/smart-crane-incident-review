@@ -11,6 +11,9 @@
 .package-open:hover{background:#1f4035}
 .package-preview{margin:18px 0;border-color:#bfd0c8;background:#fcfefd}
 .package-preview h3{font-size:22px;margin:0 0 12px}
+.package-action{display:flex;align-items:center;justify-content:space-between;gap:18px}
+.package-action p{max-width:650px;margin:0;color:#52605b;line-height:1.45}
+.package-action h3{margin:0 0 6px}
 .preview-metrics{display:grid;grid-template-columns:repeat(4,1fr);gap:10px;margin:12px 0}
 .preview-metrics span{border:1px solid #edf0ee;background:white;border-radius:9px;padding:12px;color:#52605b}
 .preview-metrics b{display:block;color:#15211d;font-size:22px;margin-bottom:3px}
@@ -26,6 +29,10 @@
 .incident-picker{grid-template-columns:1.15fr 1fr 1.35fr 1fr}
 .decision-options button{border:1px solid #dce3df;border-radius:18px;padding:7px 10px;background:#fbfcfb;color:#15211d;font:inherit;cursor:pointer}
 .comparison-table{margin:-2px 0 20px}.comparison-table table{width:100%;border-collapse:collapse;margin-top:12px}.comparison-table th{text-align:left;font-size:10px;letter-spacing:1px;color:#75837d;text-transform:uppercase;border-bottom:1px solid var(--line);padding:9px}.comparison-table td{border-bottom:1px solid #edf0ee;padding:11px 9px}.comparison-table td:nth-child(2),.comparison-table td:nth-child(3){font-family:'JetBrains Mono';font-weight:700}.comparison-table small{display:block;color:#68736e;margin-top:10px}
+.where-look{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:20px}
+.where-look .eyebrow{grid-column:1/-1}
+.where-look h3{font-size:18px;margin:0 0 8px}
+.where-look p{margin:0;color:#52605b;line-height:1.45}
 .decision-options button:hover{border-color:#102a22;background:#f1f5f2}
 .condition-grid .partial b{color:#9a7527}
 .related-memory{border-color:#cbd8d1;background:#fbfdfb}
@@ -47,3 +54,4 @@ nav button[data-view="package"]{border:1px solid #446458;color:#eef5f4;margin-bo
 nav button[data-view="package"].active{background:#d7f24b;color:#102a22}
 @media(max-width:900px){.preview-metrics{grid-template-columns:1fr 1fr}}
 @media(max-width:640px){.preview-metrics{grid-template-columns:1fr}}
+@media(max-width:760px){.package-action,.where-look{display:block}.package-action .package-open{margin-top:14px}.where-look div+div{margin-top:16px}}
