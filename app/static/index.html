@@ -8,7 +8,7 @@
 <body data-lens="director">
   <aside><div class="brand"><span>SC</span> SMART CRANE</div><p class="eyebrow">OPERATIONAL REVIEW</p>
     <div class="role-switch"><span>REVIEW LENS</span><button data-role="director" class="active">Director</button><button data-role="team">Team Review</button></div>
-    <nav><small>DIRECTOR</small><button data-view="overview" data-level="director" class="active">▦ <b>Operating picture</b></button><button data-view="live-reconstruction" data-level="director">◉ Live reconstruction</button><small>PACKAGE</small><button data-view="package" data-level="team">▣ <b>Decision Package</b></button><small>PACKAGE DRILL-DOWN</small><button data-view="incident" data-level="team">◎ What happened?</button><button data-view="changed" data-level="team">↗ What changed?</button><button data-view="where" data-level="team">⌁ Affected vs unaffected</button><button data-view="evidence-gaps" data-level="team">◇ Preserve next time</button></nav>
+    <nav><small>DIRECTOR</small><button data-view="overview" data-level="director" class="active">▦ <b>Operating picture</b></button><button data-view="decision-summary" data-level="director">◇ Decision / escalation</button><small>TEAM REVIEW</small><button data-view="package" data-level="team">▣ <b>Decision Package</b></button><button data-view="incident" data-level="team">◎ What happened?</button><button data-view="changed" data-level="team">↗ What changed?</button><button data-view="where" data-level="team">⌁ Affected vs unaffected</button><button data-view="evidence-gaps" data-level="team">◇ Preserve next time</button><button data-view="live-reconstruction" data-level="team">◉ Live reconstruction</button></nav>
     <div class="safety"><i></i><div><strong>Read-only mode</strong><small>No device control or source writes</small></div></div>
   </aside>
   <main>
@@ -39,7 +39,7 @@
     </section>
     <section id="package" class="view">
       <article class="panel evidence-package">
-        <div class="package-head"><div><span class="eyebrow">DECISION PACKAGE READY</span><h3>Crane-07 · Module unhealthy</h3><p>Captured for review at 14 Aug 18:32 UTC</p></div><button class="freeze-btn">Freeze package for team action</button></div>
+        <div class="package-head"><div><span class="eyebrow">DECISION PACKAGE READY</span><h3>Crane-07 · Module unhealthy</h3><p>Captured for review at 14 Aug 18:32 UTC</p></div><button class="freeze-btn" data-freeze-package="true">Freeze Decision Package</button></div>
         <div class="package-grid">
           <div><b>Trigger</b><span>module unhealthy / reconnect failures</span></div>
           <div><b>Last known good</b><span>12 Aug 05:32 UTC · 3 successful cycles</span></div>
@@ -53,7 +53,18 @@
         <div class="package-footer"><span><b>Human action:</b> not recorded yet</span><span><b>Outcome:</b> pending</span></div>
         <div class="package-branch"><b>What the evidence narrows</b><span>Deployment-wide: not supported by current peer comparison</span><span>Device/config: still plausible</span><span>Site/network: still unresolved</span><span>Field intervention: current evidence is insufficient to support it</span></div>
         <small>The package is sufficient to narrow the investigation, but not to establish whether the site network contributed.</small>
+        <div class="package-signature"><span class="eyebrow">PACKAGE SIGNATURE</span><dl><dt>Frozen at</dt><dd id="signatureFrozenAt">Pending</dd><dt>Decision owner</dt><dd>Engineering</dd><dt>Evidence records</dt><dd>9</dd><dt>Package version</dt><dd>v1</dd><dt>Integrity hash</dt><dd><code>8F3A...91C2</code></dd><dt>Status</dt><dd id="signatureStatus">System snapshot ready · human signature pending</dd></dl><small>Later evidence may update the current investigation, but does not alter this sealed package.</small></div>
       </article>
+    </section>
+    <section id="decision-summary" class="view">
+      <div class="overview-head"><div><p class="eyebrow">DIRECTOR SUMMARY</p><h2>Decision / escalation summary</h2></div></div>
+      <div class="director-summary-grid">
+        <article class="panel summary-card"><span class="eyebrow">SCOPE</span><strong>3 of 7 peers</strong><small>show matching precursor signals</small></article>
+        <article class="panel summary-card"><span class="eyebrow">DETECTION GAP</span><strong>6d 18h</strong><small>first abnormal to human discovery</small></article>
+        <article class="panel summary-card"><span class="eyebrow">CURRENT CONCERN</span><strong>Not clearly deployment-wide</strong><small>shared app/profile alone does not explain the split</small></article>
+        <article class="panel summary-card"><span class="eyebrow">PENDING DECISION</span><strong>Investigate path</strong><small>device/config vs site/network</small></article>
+      </div>
+      <article class="panel decision-summary-copy"><span class="eyebrow">WHAT MATTERS</span><p>Field intervention is not supported by current evidence. The biggest gap is customer-site network state and the exact disconnect reason.</p><p>Team action is not recorded yet.</p></article>
     </section>
     <section id="live-reconstruction" class="view">
       <div class="live-hero panel">
