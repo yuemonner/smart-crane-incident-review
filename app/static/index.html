@@ -8,18 +8,34 @@
 <body data-lens="director">
   <aside><div class="brand"><span>SC</span> SMART CRANE</div><p class="eyebrow">OPERATIONAL REVIEW</p>
     <div class="role-switch"><span>REVIEW LENS</span><button data-role="director" class="active">Director</button><button data-role="team">Team Review</button></div>
-    <nav><small>DIRECTOR</small><button data-view="overview" data-level="director" class="active">▦ <b>Operating picture</b></button><button data-view="decision-summary" data-level="director">◇ Decision / escalation</button><small>TEAM REVIEW</small><button data-view="package" data-level="team">▣ <b>Decision Package</b></button><button data-view="incident" data-level="team">◎ What happened?</button><button data-view="changed" data-level="team">↗ What changed?</button><button data-view="where" data-level="team">⌁ Affected vs unaffected</button><button data-view="evidence-gaps" data-level="team">◇ Preserve next time</button><button data-view="live-reconstruction" data-level="team">◉ Live reconstruction</button></nav>
+    <nav><small>DIRECTOR</small><button data-view="overview" data-level="director" class="active">▦ <b>Executive Summary</b></button><small>TEAM REVIEW</small><button data-view="operating-picture" data-level="team">◉ Operating picture</button><button data-view="package" data-level="team">▣ <b>Decision Package</b></button><button data-view="incident" data-level="team">◎ What happened?</button><button data-view="changed" data-level="team">↗ What changed?</button><button data-view="where" data-level="team">⌁ Affected vs unaffected</button><button data-view="evidence-gaps" data-level="team">◇ Preserve next time</button><button data-view="live-reconstruction" data-level="team">◉ Live reconstruction</button></nav>
     <div class="safety"><i></i><div><strong>Read-only mode</strong><small>No device control or source writes</small></div></div>
   </aside>
   <main>
-    <header><div><span class="crumb">SMART CRANE · OPERATIONAL INVESTIGATION</span><h1>Crane-07 · Operational Investigation <em id="lensDescription">director operating picture</em></h1><p class="decision-under-review"><b>Signal under review:</b> Data processing module repeatedly loses connectivity after a recent deployment.</p></div><div class="source-actions"><button id="cloudConnect">Connect Smart Crane Cloud</button><div id="sourceBadge" class="live"><i></i> CHECKING SOURCES</div></div></header>
+    <header><div><span class="crumb">SMART CRANE · OPERATIONAL INVESTIGATION</span><h1>Crane-07 · Operational Investigation <em id="lensDescription">director executive summary</em></h1><p class="decision-under-review"><b>Signal under review:</b> Data processing module repeatedly loses connectivity after a recent deployment.</p></div><div class="source-actions"><button id="cloudConnect">Connect Smart Crane Cloud</button><div id="sourceBadge" class="live"><i></i> CHECKING SOURCES</div></div></header>
     <section id="cloudPanel" class="cloud-panel" hidden>
       <form id="cloudForm" autocomplete="on"><div><strong>Smart Crane Cloud</strong><small>Credentials go directly to the existing Smart Crane login API and are never saved here.</small></div><input id="cloudEmail" name="email" type="email" autocomplete="username" placeholder="Work email" required><input id="cloudPassword" name="password" type="password" autocomplete="current-password" placeholder="Password" required><button type="submit">Connect read-only</button><button type="button" id="cloudCancel" class="quiet">Cancel</button></form>
       <p id="cloudMessage"></p><div id="liveFleet" hidden><b id="liveFleetTitle"></b><div id="liveCraneList"></div></div>
     </section>
     <section id="modeBanner" class="mode-banner demo"><b>DEMO</b><span>Representative Smart Crane evidence</span></section>
     <section class="incident-picker panel"><div><span class="eyebrow">SCENARIO</span><select id="scenarioSelect"><option value="unexpected">Post-change anomaly — connectivity review</option><option value="rollout">Planned rollout — application 0.36 decision</option></select></div><div><span class="eyebrow">EVIDENCE WORKSPACE</span><select id="evidenceMode"><option value="demo">Demo — synthetic only</option><option value="live">Live — source records only</option><option value="cached">Cached — saved source snapshot only</option><option value="partial">Partial — incomplete source set only</option></select></div><div><span class="eyebrow">TRIGGER</span><select id="incidentSelect"><option>Loading review triggers…</option></select></div><div class="freshness"><span class="eyebrow">SOURCE FRESHNESS</span><b id="freshnessState">Not evaluated</b><small id="freshnessDetail">Select a trigger</small></div></section>
-    <section id="overview" class="view active">
+    <section id="overview" class="view active executive-summary">
+      <div class="overview-head"><div><p class="eyebrow">DIRECTOR BRIEFING</p><h2>Executive Summary</h2></div><button class="package-open" data-open-team-review="true">Open Team Review</button></div>
+      <article class="panel executive-brief"><span class="eyebrow">CURRENT SITUATION</span><h3>Crane-07 developed repeated connectivity failures after a recent application/profile change.</h3></article>
+      <div class="director-summary-grid">
+        <article class="panel summary-card"><span class="eyebrow">SCOPE</span><strong>1 confirmed crane</strong><small>3 of 7 peers show precursor signals</small></article>
+        <article class="panel summary-card"><span class="eyebrow">FLEET IMPACT</span><strong>Not established</strong><small>No fleet-wide failure is currently supported</small></article>
+        <article class="panel summary-card"><span class="eyebrow">DETECTION GAP</span><strong>6d 18h</strong><small>first abnormal evidence to human discovery</small></article>
+        <article class="panel summary-card"><span class="eyebrow">TEAM STATUS</span><strong>Investigation active</strong><small>device/config vs site/network</small></article>
+      </div>
+      <div class="executive-grid">
+        <article class="panel"><span class="eyebrow">WHY IT MATTERS</span><p>Issue was detectable about six days before human discovery. Customer/site involvement may be required. Field intervention is not supported by current evidence.</p></article>
+        <article class="panel"><span class="eyebrow">WHAT CHANGED</span><p>Application 0.35 to 0.36. Device profile C16 to C17.</p></article>
+        <article class="panel"><span class="eyebrow">WHAT IS STILL UNKNOWN</span><p>Exact disconnect reason. Customer-side network/firewall state.</p></article>
+        <article class="panel"><span class="eyebrow">DECISION / ESCALATION STATUS</span><p>No immediate fleet-wide escalation supported. Further rollout decision is pending team review.</p></article>
+      </div>
+    </section>
+    <section id="operating-picture" class="view">
       <div class="overview-head"><div><p class="eyebrow">30-SECOND OPERATING PICTURE</p><h2>Operating picture</h2></div></div>
       <div class="context-strip"><div><span>Last known healthy</span><b>12 Aug · 05:32 UTC</b></div><div><span>Recent change</span><b>App 0.36 · 13 Aug</b></div><div><span>First abnormal</span><b>14 Aug · 15:32 UTC</b></div><div><span>Human discovery</span><b>21 Aug · 10:14 UTC</b></div><div><span>Detection gap</span><b>6d 18h</b></div></div>
       <div class="overview-grid situation-grid">
@@ -55,16 +71,6 @@
         <small>The package is sufficient to narrow the investigation, but not to establish whether the site network contributed.</small>
         <div class="package-signature"><span class="eyebrow">PACKAGE SIGNATURE</span><dl><dt>Frozen at</dt><dd id="signatureFrozenAt">Pending</dd><dt>Decision owner</dt><dd>Engineering</dd><dt>Evidence records</dt><dd>9</dd><dt>Package version</dt><dd>v1</dd><dt>Integrity hash</dt><dd><code>8F3A...91C2</code></dd><dt>Status</dt><dd id="signatureStatus">System snapshot ready · human signature pending</dd></dl><small>Later evidence may update the current investigation, but does not alter this sealed package.</small></div>
       </article>
-    </section>
-    <section id="decision-summary" class="view">
-      <div class="overview-head"><div><p class="eyebrow">DIRECTOR SUMMARY</p><h2>Decision / escalation summary</h2></div></div>
-      <div class="director-summary-grid">
-        <article class="panel summary-card"><span class="eyebrow">SCOPE</span><strong>3 of 7 peers</strong><small>show matching precursor signals</small></article>
-        <article class="panel summary-card"><span class="eyebrow">DETECTION GAP</span><strong>6d 18h</strong><small>first abnormal to human discovery</small></article>
-        <article class="panel summary-card"><span class="eyebrow">CURRENT CONCERN</span><strong>Not clearly deployment-wide</strong><small>shared app/profile alone does not explain the split</small></article>
-        <article class="panel summary-card"><span class="eyebrow">PENDING DECISION</span><strong>Investigate path</strong><small>device/config vs site/network</small></article>
-      </div>
-      <article class="panel decision-summary-copy"><span class="eyebrow">WHAT MATTERS</span><p>Field intervention is not supported by current evidence. The biggest gap is customer-site network state and the exact disconnect reason.</p><p>Team action is not recorded yet.</p></article>
     </section>
     <section id="live-reconstruction" class="view">
       <div class="live-hero panel">
@@ -103,5 +109,5 @@
     <section id="changed" class="view"><p class="eyebrow">SUPPORTING CONTEXT</p><h2>What changed?</h2><p class="lede">A before/after view of the observed change window. Sequence does not establish cause.</p><div class="context-strip"><div><span>Application</span><b>0.35 → 0.36</b></div><div><span>Device profile</span><b>C16 → C17</b></div><div><span>Change lead time</span><b>36h before</b></div><div><span>First symptom</span><b>3h before</b></div><div><span>Causal link</span><b>Not established</b></div></div><div id="changes" class="diffgrid"></div></section>
     <section id="evidence-gaps" class="view"><p class="eyebrow">WHAT SHOULD BE PRESERVED WITH THIS PACKAGE?</p><h2>Preserve the context before it disappears</h2><p class="lede">The pilot should prove how existing capture, device state and change history can be linked into a reviewable package, then identify which missing context should be preserved next time. The next investigation should start with a complete package instead of reconstructing the same context again.</p><div class="context-strip"><div><span>Available now</span><b>3 min capture</b></div><div><span>Available now</span><b>device twin</b></div><div><span>Available now</span><b>app/profile history</b></div><div><span>Still difficult</span><b>site network state</b></div><div><span>Link next</span><b>outcome → review</b></div></div><div class="overview-grid gaps-page"><article class="panel"><span class="eyebrow">AVAILABLE FROM CURRENT PACKAGE</span><ul id="alreadyReconstructable"></ul></article><article class="panel"><span class="eyebrow">CONTEXT STILL DIFFICULT TO RECONSTRUCT</span><ul id="notReconstructable"></ul></article><article class="panel next-evidence"><span class="eyebrow">LINK / PRESERVE NEXT TIME</span><ul id="captureNextTime"></ul></article></div></section>
   </main>
-  <script src="/static/app.js?v=machine-decision-review-9"></script><script src="/static/cloud.js?v=machine-decision-review-9"></script>
+  <script src="/static/app.js?v=machine-decision-review-10"></script><script src="/static/cloud.js?v=machine-decision-review-10"></script>
 </body></html>
